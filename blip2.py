@@ -5,15 +5,15 @@ import torch
 from glob import glob
 
 
+# Code from here:
+# https://huggingface.co/docs/transformers/main/model_doc/blip-2
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Load model
-    
     processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b")
     model = Blip2ForConditionalGeneration.from_pretrained(
         "Salesforce/blip2-opt-2.7b",
-
         # Requires packages accelerate, bitsandbytes and scipy + cuda
         # load_in_8bit=True,
         # device_map={"": 0},
@@ -26,9 +26,9 @@ def main():
         image = Image.open(image_path)
         inputs = processor(images=image, return_tensors="pt").to(device, torch.float16)
         generated_ids = model.generate(**inputs)
-        generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[
-            0
-        ].strip()
+        generated_text = processor.batch_decode(
+            generated_ids, skip_special_tokens=True
+        )[0].strip()
         print("Caption:", generated_text)
 
 
