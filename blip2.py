@@ -1,31 +1,36 @@
 from PIL import Image
 import requests
-from transformers import Blip2Processor, Blip2Model
+from transformers import Blip2Processor, Blip2ForConditionalGeneration
 import torch
+from glob import glob
 
 
 def main():
-    print("Main")
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    # Load model
+    
     processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b")
-    model = Blip2Model.from_pretrained(
-        "Salesforce/blip2-opt-2.7b", torch_dtype=torch.float16
+    model = Blip2ForConditionalGeneration.from_pretrained(
+        "Salesforce/blip2-opt-2.7b",
+
+        # Requires packages accelerate, bitsandbytes and scipy + cuda
+        # load_in_8bit=True,
+        # device_map={"": 0},
+        # torch_dtype=torch.float16,
     )
     model.to(device)
-    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-    image = Image.open(requests.get(url, stream=True).raw)
 
-    prompt = "Question: how many cats are there? Answer:"
-    inputs = processor(images=image, text=prompt, return_tensors="pt").to(
-        device, torch.float16
-    )
-
-    outputs = model(**inputs)
-    print(outputs)
-    print("Done")
+    for image_path in glob("galt/person/images/*.jpg"):
+        print("Generating caption for image:", image_path)
+        image = Image.open(image_path)
+        inputs = processor(images=image, return_tensors="pt").to(device, torch.float16)
+        generated_ids = model.generate(**inputs)
+        generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[
+            0
+        ].strip()
+        print("Caption:", generated_text)
 
 
 if __name__ == "__main__":
-    print("Main")
     main()
