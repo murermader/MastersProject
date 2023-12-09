@@ -1,0 +1,84 @@
+\PassOptionsToPackage{rgb,table}{xcolor}
+
+% Activate if you want to compile slides.
+\documentclass{beamer}
+
+% Activate if you want to compile handout.
+%\documentclass[handout]{beamer}
+
+\usetheme{default}
+
+%% TeX Settings
+\input{../config/packages.tex}
+\input{../config/colors.tex}
+
+%% Meta Data and Variables
+\input{../config/meta.tex}
+\title{Thesis Presentation}
+
+%% Presentation Style Settings
+\input{../config/style.tex}
+\input{../config/titlepage.tex}
+
+%% Document
+\begin{document}
+  \begin{frame}[plain]
+    \titlepage
+  \end{frame}
+  
+\begin{frame}{Overview}{The Basic Strucutre of My Presentation}
+  \tableofcontents
+\end{frame}
+
+\section{Introduction}
+
+\subsection{Hello World}
+
+\begin{frame}{Basic Slide}{Bullet Points}
+  \begin{itemize}
+    \item<1->{This is a simple bullet point.}
+    \item<2->{And another one.}
+  \end{itemize}
+  \vspace{1em}
+  \uncover<3->{
+    Something I'd like to uncover on slide 3.  
+  }
+\end{frame}
+
+\begin{frame}{Basic Slide}{Enumerate}
+  \begin{enumerate}
+    \item<1->{Same principle.}
+    \item<2->{Except, this time you get numbers.}
+  \end{enumerate}
+  \vspace{1em}
+  \uncover<3->{
+    Something I'd like to uncover on slide 3.  
+  }
+\end{frame}
+
+\subsection{Subsection 1}
+
+\begin{frame}{Adding Some Pictures}{Use includegraphics}
+  \center\includegraphics[width = 8cm, frame]{../assetlib/images/chain.png}
+  \vfill
+  \scriptsize Source:\hspace{1em} Satoshi Whitepaper.
+\end{frame}
+
+\begin{frame}{Adding Some Pictures}{Math with \LaTeX}
+  Yet another slide with some in-text math $X_{i}:=X_{i-1}+2, \text{ } \forall i \in \{1,...,N\}$ or in the form of a numbered equation, see equation \ref{eq:randomname}.
+  \begin{align}
+    X_{0} := 5
+    \label{eq:randomname}
+  \end{align}
+\end{frame}
+
+\section{The Model}
+  \label{sec:model}
+
+\subsection{Section 2}
+
+\begin{frame}{Slide in Section \ref{sec:model}}{Random Subtitle}
+  Another slide.
+\end{frame}
+
+\end{document}
