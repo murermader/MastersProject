@@ -40,6 +40,7 @@
 % I added these
 \usepackage{microtype}
 \usepackage{pgfgantt}
+\usepackage{xcolor}
 
 %%% Layout Specifications %%%
 \geometry{a4paper, top=35mm, left=40mm, right=40mm, bottom=45mm,
@@ -154,13 +155,17 @@ The following chart depicts my schedule from today (15.12.2023) to the submissio
 
 In the context of Galleries, Libraries, Archives, and Museums (GLAM), a prevalent challenge is the imbalance between the volume of work and the available staffing. This often leads to a substantial amount of image data being left unlabeled or uncategorized. To mitigate this issue, there is increasing interest in the use of multimedia retrieval systems that enable querying image data by using natural language descriptions. 
 
-This paper will examine the fairness and bias by using a dataset from the GALT Museum \& Archives in Lethbridge. This will be done by utilizing the Contrastive Language-Image Pretraining (CLIP) model for classification tasks to explore whether First Nations people are unfairly disadvantaged in the search results.
+The image retrieval system works by first classifying images into categories, which can then be searched with text. How bias and fairness in classification tasks can be measured is still not entirely clear. How these feature extraction models perform under the 
 
-We plan to establish a methodology for assessing the fairness and bias using our dataset. This allows us to measure and compare different models and model versions in the future. 
+In the GLAM context, a unfair image classification could lead to discrimination against a section of the population. To illustrate this problem, we will look into the discrimination of the First Nations people of Canada in the GLAM context, to see if and how much they are affected by any biases.
+
+We will measure the effectiveness of other already well-known metrics, and see how they can be applied to our problem. We will then introduce our own metric, that allows us to accurately describe the existence of biases and fairness problems for classification tasks.
+
+%We plan to establish a methodology for assessing the fairness and bias using our dataset. This allows us to measure and compare different models and model versions in the future. 
 
 % Part 2: Contents of the Paper
 % (To be written later)
-TODO: Write exact content of paper
+\textcolor{lightgray}{TODO: Write exact content of paper} 
 
 
 \section{Background}
