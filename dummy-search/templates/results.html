@@ -79,7 +79,7 @@
 
             {% for image in images_by_label_similarity %}
                 <span class="rank">{{ image.rank_by_label }}</span>
-                <span>{{ image.image_similarity }}</span>
+                <span>{{ image.label_similarity }}</span>
                 <img src="{{ url_for('serve_image', filename=os.path.basename(image.image_path)) }}"
                      alt="{{ image.label }}">
                 <span class="label">{{ image.label }}</span>
