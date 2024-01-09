@@ -5,6 +5,9 @@ from flask import Flask, render_template, request, send_from_directory
 from clip import Clip
 
 load_dotenv()
+if "IMAGE_FOLDER" not in os.environ:
+    raise ValueError("Create file .env next to app.py, wich variable IMAGE_FOLDER=<path_to_galt_images>")
+
 clip = Clip()
 app = Flask(__name__)
 
@@ -35,7 +38,7 @@ images: list[Image] = [
     # First Nation Images
     Image("199110766930", "Photograph of an two unidentified students in First Nations costume serving tea at a tea and bake sale that was part of Brotherhood Week activities at Hamilton Junior High School."),
     Image("19752990002", "Photograph of a group of First Nations people sitting by a wagon and some horses.  There is a horse drawn buggy in the background."),
-    Image("199110765331", "Photographs of  French bird hunters  and Indians.")
+    Image("199110765331", "Photograph  of Indians and French hunters in Lethbridge. The hunters came from France to shoot upland game birds in southern Alberta and were feted by Lethbridge boosters.  Upon arrival a private reception was held for the group sponsored by the Alberta Fish and Game Association where they were presented with honorary memberships in the Lethbridge Fish and game Association by president Joe Balla.  In addition to shopping, the hunters toured the city,  and attended a civic reception as well as curling demonstrations.  The group also saw  traditional Indian dancing, branding and rodeo demonstrations before returning to Paris.")
 ]
 # fmt: on
 
