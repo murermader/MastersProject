@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Page</title>
+    <style>
+        #loading {
+            display: none;
+        }
+    </style>
+    <script>
+        function showLoading() {
+            console.log("showLoading")
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            console.log("hideLoading")
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Use pageshow event to hide loading on back navigation
+        window.addEventListener('pageshow', function (event) {
+            // Check if the event persisted property is false
+            if (event.persisted) {
+                hideLoading();
+            }
+        });
+    </script>
+</head>
+<body>
+<h1>Search Page</h1>
+<form action="{{ url_for('results') }}" method="post" onsubmit="showLoading()">
+    <label for="search_query">Search:</label>
+    <input type="text" id="search_query" name="search_query" required>
+    <button type="submit">Search</button>
+</form>
+<div id="loading">Loading...</div>
+</body>
+</html>
