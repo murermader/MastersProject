@@ -45,7 +45,8 @@
     <script>
         function showLoading() {
             console.log("showLoading")
-            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').style.display = 'initial';
+            document.getElementById('submit').disabled = true;
         }
 
         function hideLoading() {
@@ -67,9 +68,9 @@
 <form action="{{ url_for('results') }}" method="post" onsubmit="showLoading()">
     <label for="search_query">Search:</label>
     <input type="text" id="search_query" name="search_query" required>
-    <button type="submit">Search</button>
+    <button id="submit" type="submit">Search</button>
+    <span id="loading">Loading...</span>
 </form>
-<div id="loading">Loading...</div>
 <h1 style="margin-top: 2rem">Images</h1>
 <div class="image-container">
     {% for image in images %}
