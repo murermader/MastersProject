@@ -18,7 +18,8 @@ class Image:
         # Will be computed later
         self.image_similarity = None
         self.label_similarity = None
-        self.rank = None
+        self.rank_by_image = None
+        self.rank_by_label = None
 
         if not os.path.isfile(self.image_path):
             raise ValueError(f"File does not exist: {self.image_path}")
@@ -71,15 +72,36 @@ def results():
                 search_query_embedding, label_embedding
             )
 
-        # Assuming each Image object has an 'image_similarity' attribute
-        images.sort(key=lambda x: x.image_similarity, reverse=True)
-        for idx, image in enumerate(images):
-            image.rank = idx + 1
-            print(f"Rank: {idx +1} Label: {image.label} Cosine Similarity: {image.image_similarity}")
+        images_by_image_similarity = sorted(
+            images[:], key=lambda x: x.image_similarity, reverse=True
+        )
+        images_by_label_similarity = sorted(
+            images[:], key=lambda x: x.label_similarity, reverse=True
+        )
+
+        # images.sort(key=lambda x: x.image_similarity, reverse=True)
+        print("Image Similarity")
+        for idx, image in enumerate(images_by_image_similarity):
+            image.rank_by_image = idx + 1
+            print(
+                f"Rank: {idx +1} Label: {image.label} Cosine Similarity: {image.image_similarity}"
+            )
+
+        print("Label Similarity")
+        for idx, image in enumerate(images_by_label_similarity):
+            image.rank_by_label = idx + 1
+            print(
+                f"Rank: {idx +1} Label: {image.label} Cosine Similarity: {image.label_similarity}"
+            )
 
         # Perform any processing or fetching results based on the search query
         # For simplicity, let's just pass the search query to the results template
-        return render_template("results.html", search_query=search_query, images=images)
+        return render_template(
+            "results.html",
+            search_query=search_query,
+            images_by_image_similarity=images_by_image_similarity,
+            images_by_label_similarity=images_by_label_similarity,
+        )
 
 
 if __name__ == "__main__":
