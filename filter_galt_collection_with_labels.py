@@ -29,7 +29,24 @@ if __name__ == "__main__":
             file_path = os.path.join(os.environ["IMAGE_FOLDER"], f"P{id}.jpg")
 
             if not os.path.isfile(file_path):
-                print(f"File with Accession No. [{id}] could not be found at {file_path}")
+                print(
+                    f"File with Accession No. [{id}] could not be found at {file_path}"
+                )
                 continue
 
-            shutil.copy(file_path, keyword_directory)
+            # sanitize label (windows)
+            label = label.replace("\n", " ")
+            label = label.replace("\t", " ")
+            for char in ["\\", "/", "*", "?", "<", ">", "|", '"', "'", ":"]:
+                label = label.replace(char, "")
+
+            if len(label) + len(keyword_directory) >= 255:
+                chars_to_remove = (len(label) + len(keyword_directory)) - (
+                    255 + len(" - ") + len(".jpg") + len(id) + 1
+                )
+                label = label[:-chars_to_remove]
+
+            output_file = os.path.join(
+                keyword_directory, str(id) + " - " + label + ".jpg"
+            )
+            shutil.copyfile(file_path, output_file)
