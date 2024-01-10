@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, send_from_directory
 from clip import Clip
 
-load_dotenv()
+load_dotenv(dotenv_path="../.env")
 if "IMAGE_FOLDER" not in os.environ:
-    raise ValueError("Create file .env next to app.py, wich variable IMAGE_FOLDER=<path_to_galt_images>")
+    raise ValueError("Create file .env in the git repo root, wich variable IMAGE_FOLDER=<path_to_galt_images>")
 
 clip = Clip()
 app = Flask(__name__)
