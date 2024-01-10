@@ -3,6 +3,30 @@ from pathlib import Path
 import shutil
 from dotenv import load_dotenv
 import pandas as pd
+from nltk import pos_tag, word_tokenize
+from nltk.corpus import stopwords
+from nltk.tokenize import RegexpTokenizer
+
+
+def extract_nouns_and_adjectives(sentence):
+    # Tokenize the sentence
+    tokenizer = RegexpTokenizer(r"\w+")
+    words = tokenizer.tokenize(sentence)
+
+    # Remove stopwords
+    words = [
+        word.lower() for word in words if word.lower() not in stopwords.words("english")
+    ]
+
+    # Perform Part-of-Speech tagging
+    tagged_words = pos_tag(words)
+
+    # Extract nouns and adjectives
+    nouns = [word for word, pos in tagged_words if pos.startswith("N")]
+    adjectives = [word for word, pos in tagged_words if pos.startswith("J")]
+
+    return nouns, adjectives
+
 
 if __name__ == "__main__":
     load_dotenv()
@@ -10,7 +34,21 @@ if __name__ == "__main__":
     labels_df = pd.read_excel(os.environ["LABELS_FILE"])
     # labels_df = labels_df.dropna(columns=["Scope and Content"])
 
-    keywords_to_filter = ["first nation", "indian", "native", "blackfoot", "tribe"]
+    keywords_to_filter = [
+        # A
+        "basketball",
+        "sport",
+        "canadian",
+        "american",
+        "european",
+        
+        # B
+        "first nation",
+        "indian",
+        "native",
+        "blackfoot",
+        "tribe",
+    ]
 
     for keyword in keywords_to_filter:
         filtered_labels = labels_df[
@@ -23,6 +61,10 @@ if __name__ == "__main__":
             filtered_labels["Scope and Content"], filtered_labels["Accession No."]
         ):
             print(f"{id}: {label}")
+            # nouns, adjectives = extract_nouns_and_adjectives(label)
+            # print("Nouns:", nouns)
+            # print("Adjectives:", adjectives)
+            # continue
 
             keyword_directory = os.path.join(os.environ["IMAGE_FOLDER"], keyword)
             Path(keyword_directory).mkdir(parents=True, exist_ok=True)
@@ -46,7 +88,6 @@ if __name__ == "__main__":
                 )
                 label = label[:-chars_to_remove]
 
-            output_file = os.path.join(
-                keyword_directory, str(id) + " - " + label + ".jpg"
-            )
+            ext = "jpg" if label.endswith(".") else ".jpg"
+            output_file = os.path.join(keyword_directory, str(id) + " - " + label + ext)
             shutil.copyfile(file_path, output_file)
