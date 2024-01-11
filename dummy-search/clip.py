@@ -35,3 +35,8 @@ class Clip:
         b = F.normalize(b, p=2, dim=1)
         cosine_similarity = F.cosine_similarity(a, b)
         return round(cosine_similarity.item(), 3)
+
+    @staticmethod
+    def calc_l2_distance(a, b):
+        l2_distance = torch.norm(a - b, p=2)
+        return round(l2_distance.item(), 1)

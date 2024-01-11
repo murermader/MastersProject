@@ -21,6 +21,8 @@ class Image:
         # Will be computed later
         self.image_similarity = None
         self.label_similarity = None
+        # self.image_l2_distance = None
+        # self.label_l2_distance = None
         self.rank_by_image = None
         self.rank_by_label = None
 
@@ -33,13 +35,19 @@ images: list[Image] = [
     # Basketbal Images
     Image("199110767087", "Photograph of Central Catholic High School basketball team."),
     Image("1991107619078", "Unidentified Lethbridge Community College Kodiak basketball player."),
-    Image("199110766232", "Photograph of  a two day annual Christmas Senior Men’s Basketball Tournament held at the Civic Centre."),
+    Image("199110766232",
+          "Photograph of  a two day annual Christmas Senior Men’s Basketball Tournament held at the Civic Centre."),
 
     # First Nation Images
-    Image("199110766930", "Photograph of an two unidentified students in First Nations costume serving tea at a tea and bake sale that was part of Brotherhood Week activities at Hamilton Junior High School."),
-    Image("19752990002", "Photograph of a group of First Nations people sitting by a wagon and some horses.  There is a horse drawn buggy in the background."),
-    Image("199110765331", "Photograph  of Indians and French hunters in Lethbridge. The hunters came from France to shoot upland game birds in southern Alberta and were feted by Lethbridge boosters.  Upon arrival a private reception was held for the group sponsored by the Alberta Fish and Game Association where they were presented with honorary memberships in the Lethbridge Fish and game Association by president Joe Balla.  In addition to shopping, the hunters toured the city,  and attended a civic reception as well as curling demonstrations.  The group also saw  traditional Indian dancing, branding and rodeo demonstrations before returning to Paris.")
+    Image("199110766930",
+          "Photograph of an two unidentified students in First Nations costume serving tea at a tea and bake sale that was part of Brotherhood Week activities at Hamilton Junior High School."),
+    Image("19752990002",
+          "Photograph of a group of First Nations people sitting by a wagon and some horses.  There is a horse drawn buggy in the background."),
+    Image("199110765331",
+          "Photograph  of Indians and French hunters in Lethbridge. The hunters came from France to shoot upland game birds in southern Alberta and were feted by Lethbridge boosters.  Upon arrival a private reception was held for the group sponsored by the Alberta Fish and Game Association where they were presented with honorary memberships in the Lethbridge Fish and game Association by president Joe Balla.  In addition to shopping, the hunters toured the city,  and attended a civic reception as well as curling demonstrations.  The group also saw  traditional Indian dancing, branding and rodeo demonstrations before returning to Paris.")
 ]
+
+
 # fmt: on
 
 
@@ -60,51 +68,92 @@ app.jinja_env.globals.update(os=os, serve_image=serve_image)
 
 @app.route("/results", methods=["POST"])
 def results():
+    use_cosine_similarity = False
+
     if request.method == "POST":
         search_query = request.form["search_query"]
         search_query_embedding = clip.get_text_embedding(search_query)
 
         for idx, image in enumerate(images):
-            print(f"Calculating similarity for image {idx+1}")
+            print(f"Calculating similarity for image {idx + 1}")
             image_embedding = clip.get_image_embedding(image.image_path)
             label_embedding = clip.get_text_embedding(image.label)
-            image.image_similarity = clip.calc_cosine_similarity(
-                search_query_embedding, image_embedding
-            )
-            image.label_similarity = clip.calc_cosine_similarity(
-                search_query_embedding, label_embedding
-            )
 
-        images_by_image_similarity = sorted(
-            images[:], key=lambda x: x.image_similarity, reverse=True
-        )
-        images_by_label_similarity = sorted(
-            images[:], key=lambda x: x.label_similarity, reverse=True
-        )
+            if use_cosine_similarity:
+                image.image_similarity = clip.calc_cosine_similarity(
+                    search_query_embedding, image_embedding
+                )
+                image.label_similarity = clip.calc_cosine_similarity(
+                    search_query_embedding, label_embedding
+                )
+            else:
+                image.image_similarity = clip.calc_l2_distance(
+                    search_query_embedding, image_embedding
+                )
+                image.label_similarity = clip.calc_l2_distance(
+                    search_query_embedding, label_embedding
+                )
 
-        # images.sort(key=lambda x: x.image_similarity, reverse=True)
+            # Shorten label
+            max_length = 100
+            if len(image.label) > max_length:
+                image.label = image.label[:max_length] + "..."
+
         print("Image Similarity")
-        for idx, image in enumerate(images_by_image_similarity):
-            image.rank_by_image = idx + 1
-            print(
-                f"Rank: {idx +1} Label: {image.label} Cosine Similarity: {image.image_similarity}"
+        if use_cosine_similarity:
+            images_desc_by_cosine = sorted(
+                images[:], key=lambda x: x.image_similarity, reverse=True
+            )
+            labels_desc_by_cosine = sorted(
+                images[:], key=lambda x: x.label_similarity, reverse=True
             )
 
-        print("Label Similarity")
-        for idx, image in enumerate(images_by_label_similarity):
-            image.rank_by_label = idx + 1
-            print(
-                f"Rank: {idx +1} Label: {image.label} Cosine Similarity: {image.label_similarity}"
+            for idx, image in enumerate(images_desc_by_cosine):
+                image.rank_by_image = idx + 1
+                print(
+                    f"Rank: {idx + 1} Label: {image.label} Cosine Similarity: {image.image_similarity}"
+                )
+
+            print("Label Similarity")
+            for idx, image in enumerate(labels_desc_by_cosine):
+                image.rank_by_label = idx + 1
+                print(
+                    f"Rank: {idx + 1} Label: {image.label} Cosine Similarity: {image.label_similarity}"
+                )
+
+            return render_template(
+                "results.html",
+                search_query=search_query,
+                images_by_image_similarity=images_desc_by_cosine,
+                images_by_label_similarity=labels_desc_by_cosine,
+            )
+        else:
+            images_asc_by_l2 = sorted(
+                images[:], key=lambda x: x.image_similarity
+            )
+            labels_asc_by_l2 = sorted(
+                images[:], key=lambda x: x.label_similarity
             )
 
-        # Perform any processing or fetching results based on the search query
-        # For simplicity, let's just pass the search query to the results template
-        return render_template(
-            "results.html",
-            search_query=search_query,
-            images_by_image_similarity=images_by_image_similarity,
-            images_by_label_similarity=images_by_label_similarity,
-        )
+            for idx, image in enumerate(images_asc_by_l2):
+                image.rank_by_image = idx + 1
+                print(
+                    f"Rank: {idx + 1} Label: {image.label} L2 Distance: {image.image_similarity}"
+                )
+
+            print("Label Similarity")
+            for idx, image in enumerate(labels_asc_by_l2):
+                image.rank_by_label = idx + 1
+                print(
+                    f"Rank: {idx + 1} Label: {image.label} L2 Distance: {image.label_similarity}"
+                )
+
+            return render_template(
+                "results.html",
+                search_query=search_query,
+                images_by_image_similarity=images_asc_by_l2,
+                images_by_label_similarity=labels_asc_by_l2,
+            )
 
 
 if __name__ == "__main__":
