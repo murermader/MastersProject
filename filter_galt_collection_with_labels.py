@@ -3,29 +3,6 @@ from pathlib import Path
 import shutil
 from dotenv import load_dotenv
 import pandas as pd
-from nltk import pos_tag, word_tokenize
-from nltk.corpus import stopwords
-from nltk.tokenize import RegexpTokenizer
-
-
-def extract_nouns_and_adjectives(sentence):
-    # Tokenize the sentence
-    tokenizer = RegexpTokenizer(r"\w+")
-    words = tokenizer.tokenize(sentence)
-
-    # Remove stopwords
-    words = [
-        word.lower() for word in words if word.lower() not in stopwords.words("english")
-    ]
-
-    # Perform Part-of-Speech tagging
-    tagged_words = pos_tag(words)
-
-    # Extract nouns and adjectives
-    nouns = [word for word, pos in tagged_words if pos.startswith("N")]
-    adjectives = [word for word, pos in tagged_words if pos.startswith("J")]
-
-    return nouns, adjectives
 
 
 if __name__ == "__main__":
@@ -61,10 +38,6 @@ if __name__ == "__main__":
             filtered_labels["Scope and Content"], filtered_labels["Accession No."]
         ):
             print(f"{id}: {label}")
-            # nouns, adjectives = extract_nouns_and_adjectives(label)
-            # print("Nouns:", nouns)
-            # print("Adjectives:", adjectives)
-            # continue
 
             keyword_directory = os.path.join(os.environ["IMAGE_FOLDER"], keyword)
             Path(keyword_directory).mkdir(parents=True, exist_ok=True)
@@ -82,9 +55,10 @@ if __name__ == "__main__":
             for char in ["\\", "/", "*", "?", "<", ">", "|", '"', "'", ":"]:
                 label = label.replace(char, "")
 
-            if len(label) + len(keyword_directory) >= 255:
+            max_path_length = 200
+            if len(label) + len(keyword_directory) >= max_path_length:
                 chars_to_remove = (len(label) + len(keyword_directory)) - (
-                    255 + len(" - ") + len(".jpg") + len(id) + 1
+                    max_path_length + len(" - ") + len(".jpg") + len(str(id)) + 1
                 )
                 label = label[:-chars_to_remove]
 
