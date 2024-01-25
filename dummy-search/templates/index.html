@@ -24,6 +24,11 @@
             margin-top: 10px;
         }
 
+        summary {
+            cursor: pointer;
+        }
+
+
     </style>
     <script>
         function showLoading() {
@@ -55,19 +60,30 @@
     <button id="submit" type="submit">Search</button>
     <span id="loading">Loading...</span>
 </form>
-<h1 style="margin-top: 2rem">Images</h1>
-<div class="image-container">
-    {% for image in images %}
-        <div class="image-item">
-            <img src="{{ url_for('serve_image', filename=os.path.basename(image.image_path)) }}" alt="{{ image.label }}"
-                 style="max-width: 400px;max-height: 400px;">
-            <p class="image-label">
-                <span style="font-weight: bold">{{ image.id }}</span>
-                <br>
-                <span>{{ image.label }}</span>
-            </p>
+<h1 style="margin-top: 2rem">Datasets</h1>
+{% for dataset in datasets %}
+    <details>
+        <summary>
+            <span>{{ dataset.name }}</span>
+            <span> (</span>
+            <span>{{ dataset.images|length }}</span>
+            <span>)</span>
+        </summary>
+        <div class="image-container">
+            {% for image in dataset.images %}
+                <div class="image-item">
+                    <img src="{{ url_for('serve_image', filename=os.path.basename(image.image_path)) }}"
+                         alt="{{ image.label }}"
+                         style="max-width: 400px;max-height: 400px;">
+                    <p class="image-label">
+                        <span style="font-weight: bold">{{ image.id }}</span>
+                        <br>
+                        <span>{{ image.label }}</span>
+                    </p>
+                </div>
+            {% endfor %}
         </div>
-    {% endfor %}
-</div>
+    </details>
+{% endfor %}
 </body>
 </html>

@@ -9,7 +9,6 @@ class Clip:
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
         self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
         self.tokenizer = AutoTokenizer.from_pretrained("openai/clip-vit-base-patch32")
-        print("CLIP initialized")
 
     def get_text_embedding(self, text: str):
         # Limit length of text to 400, because otherwise the model crashes with a random error.

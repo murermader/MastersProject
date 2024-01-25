@@ -1,59 +1,55 @@
 import os
-import time
+import pandas as pd
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, send_from_directory
 from clip import Clip
+from data import datasets
+from classes import Dataset, Image
 
 load_dotenv(dotenv_path="../.env")
+dotenv_error_message = (
+    "Create file .env in the git repo root, with variable {key_value}"
+)
 if "IMAGE_FOLDER" not in os.environ:
-    raise ValueError("Create file .env in the git repo root, wich variable IMAGE_FOLDER=<path_to_galt_images>")
+    raise ValueError(
+        dotenv_error_message.replace("{path}", "IMAGE_FOLDER=<path_to_galt_images>")
+    )
+if "LABELS_FILE" not in os.environ:
+    raise ValueError(
+        dotenv_error_message.replace(
+            "{path}", "LABELS_FILE=<path_to_excel_file_with_labels>"
+        )
+    )
 
-clip = Clip()
 app = Flask(__name__)
 
 
-class Image:
-    def __init__(self, id: str, label: str):
-        self.id = id
-        self.label = label
-        self.image_path = os.path.join(os.environ["IMAGE_FOLDER"], f"P{id}.jpg")
+def load_labels_for_datasets(datasets: list[Dataset]):
+    """
+    Go thou
+    :param datasets:
+    :return:
+    """
+    labels = pd.read_excel(os.environ["LABELS_FILE"])
 
-        # Will be computed later
-        self.image_similarity = None
-        self.label_similarity = None
-        # self.image_l2_distance = None
-        # self.label_l2_distance = None
-        self.rank_by_image = None
-        self.rank_by_label = None
+    for dataset in datasets:
+        images_with_labels = []
+        for id in dataset.ids:
+            label = labels[labels["Accession No."] == id]["Scope and Content"].item()
 
-        if not os.path.isfile(self.image_path):
-            raise ValueError(f"File does not exist: {self.image_path}")
+            if not label:
+                print(f"No label for image with id [{id}]")
+                label = ""
 
+            image = Image(id, label)
+            images_with_labels.append(image)
 
-# fmt: off
-images: list[Image] = [
-    # Basketbal Images
-    Image("199110767087", "Photograph of Central Catholic High School basketball team."),
-    Image("1991107619078", "Unidentified Lethbridge Community College Kodiak basketball player."),
-    Image("199110766232",
-          "Photograph of  a two day annual Christmas Senior Men’s Basketball Tournament held at the Civic Centre."),
-
-    # First Nation Images
-    Image("199110766930",
-          "Photograph of an two unidentified students in First Nations costume serving tea at a tea and bake sale that was part of Brotherhood Week activities at Hamilton Junior High School."),
-    Image("19752990002",
-          "Photograph of a group of First Nations people sitting by a wagon and some horses.  There is a horse drawn buggy in the background."),
-    Image("199110765331",
-          "Photograph  of Indians and French hunters in Lethbridge. The hunters came from France to shoot upland game birds in southern Alberta and were feted by Lethbridge boosters.  Upon arrival a private reception was held for the group sponsored by the Alberta Fish and Game Association where they were presented with honorary memberships in the Lethbridge Fish and game Association by president Joe Balla.  In addition to shopping, the hunters toured the city,  and attended a civic reception as well as curling demonstrations.  The group also saw  traditional Indian dancing, branding and rodeo demonstrations before returning to Paris.")
-]
-
-
-# fmt: on
+        dataset.images = images_with_labels
 
 
 @app.route("/")
 def index():
-    return render_template("index.html", images=images)
+    return render_template("index.html", datasets=datasets)
 
 
 # Serve images route
@@ -157,4 +153,12 @@ def results():
 
 
 if __name__ == "__main__":
+    print("Loading CLIP...")
+    clip = Clip()
+    print("Done")
+
+    print("Loading labels...")
+    load_labels_for_datasets(datasets)
+    print("Done")
+
     app.run(debug=True)
