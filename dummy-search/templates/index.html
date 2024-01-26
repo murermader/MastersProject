@@ -55,9 +55,19 @@
 <body>
 <h1>Search</h1>
 <form action="{{ url_for('results') }}" method="post" onsubmit="showLoading()">
-    <label for="search_query">Topic:</label>
-    <input type="text" id="search_query" name="search_query" required>
-    <button id="submit" type="submit">Search</button>
+    <div>
+        <label for="search_query">Topic:</label>
+        <input type="text" id="search_query" name="search_query" required>
+        <button id="submit" type="submit">Search</button>
+    </div>
+    <div>
+          <span style="display:block; margin-top: 1rem">Measure embedding similarity with</span>
+          <input type="radio" id="cos" name="similarity_measurement" value="Cosine Similarity" checked>
+          <label for="cos">Cosine Similarity</label><br>
+
+          <input type="radio" id="l2" name="similarity_measurement" value="L2 Distance">
+          <label for="l2">L2 Distance</label><br>
+    </div>
     <span id="loading">Loading...</span>
 </form>
 <h1 style="margin-top: 2rem">Datasets</h1>

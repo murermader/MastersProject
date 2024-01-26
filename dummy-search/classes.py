@@ -18,6 +18,7 @@ class Image:
         self.image_path = os.path.join(os.environ["IMAGE_FOLDER"], f"P{id}.jpg")
 
         # Will be computed later
+        self.embedding = None
         self.image_similarity = None
         self.label_similarity = None
         self.rank_by_image = None

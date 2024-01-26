@@ -162,3 +162,4 @@ cython_debug/
 # macOS
 .DS_STORE
 .idea
+dummy-search/diskcache

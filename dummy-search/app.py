@@ -5,6 +5,8 @@ from flask import Flask, render_template, request, send_from_directory
 from clip import Clip
 from data import datasets
 from classes import Dataset, Image
+from diskcache import Cache
+from itertools import chain
 
 load_dotenv(dotenv_path="../.env")
 dotenv_error_message = (
@@ -47,6 +49,17 @@ def load_labels_for_datasets(datasets: list[Dataset]):
         dataset.images = images_with_labels
 
 
+def load_or_create_image_embeddings(datasets: list[Dataset]):
+    with Cache("diskcache") as cache:
+        for dataset in datasets:
+            for image in dataset.images:
+                if image.id in cache:
+                    image.embedding = cache[image.id]
+                else:
+                    image.embedding = clip.get_image_embedding(image.image_path)
+                    cache.add(image.id, image.embedding)
+
+
 @app.route("/")
 def index():
     return render_template("index.html", datasets=datasets)
@@ -64,92 +77,51 @@ app.jinja_env.globals.update(os=os, serve_image=serve_image)
 
 @app.route("/results", methods=["POST"])
 def results():
-    use_cosine_similarity = False
+    if not request.method == "POST":
+        return
 
-    if request.method == "POST":
-        search_query = request.form["search_query"]
-        search_query_embedding = clip.get_text_embedding(search_query)
+    search_query = request.form["search_query"]
+    similarity_measurement = request.form["similarity_measurement"]
+    print(similarity_measurement)
 
-        for idx, image in enumerate(images):
-            print(f"Calculating similarity for image {idx + 1}")
-            image_embedding = clip.get_image_embedding(image.image_path)
-            label_embedding = clip.get_text_embedding(image.label)
+    search_query_embedding = clip.get_text_embedding(search_query)
+    images = list(
+        chain.from_iterable(
+            [[image for image in dataset.images] for dataset in datasets]
+        )
+    )
 
-            if use_cosine_similarity:
-                image.image_similarity = clip.calc_cosine_similarity(
-                    search_query_embedding, image_embedding
-                )
-                image.label_similarity = clip.calc_cosine_similarity(
-                    search_query_embedding, label_embedding
-                )
-            else:
-                image.image_similarity = clip.calc_l2_distance(
-                    search_query_embedding, image_embedding
-                )
-                image.label_similarity = clip.calc_l2_distance(
-                    search_query_embedding, label_embedding
-                )
-
-            # Shorten label
-            max_length = 100
-            if len(image.label) > max_length:
-                image.label = image.label[:max_length] + "..."
-
-        print("Image Similarity")
-        if use_cosine_similarity:
-            images_desc_by_cosine = sorted(
-                images[:], key=lambda x: x.image_similarity, reverse=True
-            )
-            labels_desc_by_cosine = sorted(
-                images[:], key=lambda x: x.label_similarity, reverse=True
-            )
-
-            for idx, image in enumerate(images_desc_by_cosine):
-                image.rank_by_image = idx + 1
-                print(
-                    f"Rank: {idx + 1} Label: {image.label} Cosine Similarity: {image.image_similarity}"
-                )
-
-            print("Label Similarity")
-            for idx, image in enumerate(labels_desc_by_cosine):
-                image.rank_by_label = idx + 1
-                print(
-                    f"Rank: {idx + 1} Label: {image.label} Cosine Similarity: {image.label_similarity}"
-                )
-
-            return render_template(
-                "results.html",
-                search_query=search_query,
-                images_by_image_similarity=images_desc_by_cosine,
-                images_by_label_similarity=labels_desc_by_cosine,
+    for idx, image in enumerate(images):
+        if similarity_measurement == "Cosine Similarity":
+            image.image_similarity = clip.calc_cosine_similarity(
+                search_query_embedding, image.embedding
             )
         else:
-            images_asc_by_l2 = sorted(
-                images[:], key=lambda x: x.image_similarity
-            )
-            labels_asc_by_l2 = sorted(
-                images[:], key=lambda x: x.label_similarity
+            image.image_similarity = clip.calc_l2_distance(
+                search_query_embedding, image.embedding
             )
 
-            for idx, image in enumerate(images_asc_by_l2):
-                image.rank_by_image = idx + 1
-                print(
-                    f"Rank: {idx + 1} Label: {image.label} L2 Distance: {image.image_similarity}"
-                )
+        # Shorten label
+        max_length = 100
+        if len(image.label) > max_length:
+            image.label = image.label[:max_length] + "..."
 
-            print("Label Similarity")
-            for idx, image in enumerate(labels_asc_by_l2):
-                image.rank_by_label = idx + 1
-                print(
-                    f"Rank: {idx + 1} Label: {image.label} L2 Distance: {image.label_similarity}"
-                )
+    if similarity_measurement == "Cosine Similarity":
+        images = sorted(images[:], key=lambda x: x.image_similarity, reverse=True)
+    else:
+        images = sorted(images[:], key=lambda x: x.image_similarity)
 
-            return render_template(
-                "results.html",
-                search_query=search_query,
-                images_by_image_similarity=images_asc_by_l2,
-                images_by_label_similarity=labels_asc_by_l2,
-            )
+    for idx, image in enumerate(images):
+        image.rank_by_image = idx + 1
+        print(
+            f"Rank: {idx + 1} Label: {image.label} Cosine Similarity: {image.image_similarity}"
+        )
+    return render_template(
+        "results.html",
+        search_query=search_query,
+        similarity_measurement=similarity_measurement,
+        images_by_image_similarity=images,
+    )
 
 
 if __name__ == "__main__":
@@ -159,6 +131,10 @@ if __name__ == "__main__":
 
     print("Loading labels...")
     load_labels_for_datasets(datasets)
+    print("Done")
+
+    print("Loading image embeddings...")
+    load_or_create_image_embeddings(datasets)
     print("Done")
 
     app.run(debug=True)
