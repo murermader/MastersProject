@@ -35,24 +35,20 @@ def load_labels_for_datasets(datasets: list[Dataset]):
     labels = pd.read_excel(os.environ["LABELS_FILE"])
 
     for dataset in datasets:
-        images_with_labels = []
+        id_to_image = {}
         for id in dataset.ids:
             label = labels[labels["Accession No."] == id]["Scope and Content"].item()
-
             if not label:
                 print(f"No label for image with id [{id}]")
                 label = ""
-
-            image = Image(id, label)
-            images_with_labels.append(image)
-
-        dataset.images = images_with_labels
+            id_to_image[id] = Image(id, label)
+        dataset.id_to_image = id_to_image
 
 
 def load_or_create_image_embeddings(datasets: list[Dataset]):
     with Cache("diskcache") as cache:
         for dataset in datasets:
-            for image in dataset.images:
+            for image in dataset.id_to_image.values():
                 if image.id in cache:
                     image.embedding = cache[image.id]
                 else:
@@ -83,13 +79,28 @@ def results():
     search_query = request.form["search_query"]
     similarity_measurement = request.form["similarity_measurement"]
     print(similarity_measurement)
-
     search_query_embedding = clip.get_text_embedding(search_query)
-    images = list(
+
+    # Load every picture only once, but check from where it comes from.
+    image_ids = set(
         chain.from_iterable(
-            [[image for image in dataset.images] for dataset in datasets]
+            [[image_id for image_id in dataset.ids] for dataset in datasets]
         )
     )
+    images = []
+    for image_id in image_ids:
+        from_dataset = []
+        image = None
+        for dataset in datasets:
+            if image_id in dataset.ids:
+                from_dataset.append(dataset.name)
+                image = dataset.id_to_image[image_id]
+
+        if not image:
+            raise ValueError("Image ID in Dataset, but the image was not found???")
+
+        image.from_dataset = ", ".join(from_dataset)
+        images.append(image)
 
     for idx, image in enumerate(images):
         if similarity_measurement == "Cosine Similarity":
@@ -112,7 +123,7 @@ def results():
         images = sorted(images[:], key=lambda x: x.image_similarity)
 
     for idx, image in enumerate(images):
-        image.rank_by_image = idx + 1
+        image.rank = idx + 1
         print(
             f"Rank: {idx + 1} Label: {image.label} Cosine Similarity: {image.image_similarity}"
         )

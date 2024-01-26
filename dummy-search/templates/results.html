@@ -23,7 +23,7 @@
             justify-items: center;
             row-gap: 3rem;
             column-gap: 2rem;
-            grid-template-columns: auto auto auto 1fr;
+            grid-template-columns: auto auto auto auto auto 1fr;
         }
 
         img {
@@ -56,13 +56,17 @@
         <span class="header">Rank</span>
         <span class="header">{{ similarity_measurement }}</span>
         <span class="header">Image</span>
+        <span class="header">ID</span>
+        <span class="header">From Dataset</span>
         <span class="header">Label</span>
 
         {% for image in images_by_image_similarity %}
-            <span class="rank">{{ image.rank_by_image }}</span>
+            <span class="rank">{{ image.rank }}</span>
             <span>{{ image.image_similarity }}</span>
             <img src="{{ url_for('serve_image', filename=os.path.basename(image.image_path)) }}"
                  alt="{{ image.label }}">
+            <span class="label">{{ image.id }}</span>
+            <span class="label">{{ image.from_dataset }}</span>
             <span class="label">{{ image.label }}</span>
         {% endfor %}
     </div>
