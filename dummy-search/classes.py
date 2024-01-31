@@ -16,8 +16,7 @@ class Image:
 
         # Get ID from filename
         filename = os.path.basename(image_path)
-        accesion_number = re.sub(r"\(\d+\)", "", filename).lstrip("P").rstrip(".jpg")
-        self.id = accesion_number
+        self.id = re.sub(r"\(\d+\)", "", filename).lstrip("P").rstrip(".jpg").strip()
 
         # Will be computed later
         self.label = ""
