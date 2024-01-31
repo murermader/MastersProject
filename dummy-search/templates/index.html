@@ -80,7 +80,7 @@
             <span>)</span>
         </summary>
         <div class="image-container">
-            {% for image in dataset.id_to_image %}
+            {% for image in dataset.id_to_image.values() %}
                 <div class="image-item">
                     <img src="{{ url_for('serve_image', filename=os.path.basename(image.image_path)) }}"
                          alt="{{ image.label }}"
