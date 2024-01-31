@@ -1,10 +1,12 @@
 import os
+from glob import glob
+
 import pandas as pd
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, send_from_directory
 from clip import Clip
 from data import datasets
-from classes import Dataset, Image
+from classes import Image
 from diskcache import Cache
 from itertools import chain
 
@@ -24,36 +26,48 @@ if "LABELS_FILE" not in os.environ:
     )
 
 app = Flask(__name__)
+images = []
 
 
-def load_labels_for_datasets(datasets: list[Dataset]):
-    """
-    Go thou
-    :param datasets:
-    :return:
-    """
+def load_all_images():
+    global images
+
+    # Load labels and convert the pandas datatable to a dictionary, because the lookup in a pandas datatable
+    # is very slow.
     labels = pd.read_excel(os.environ["LABELS_FILE"])
+    df_unique = labels.drop_duplicates(subset="Accession No.")
+    labels_dict = {
+        row["Accession No."]: row["Scope and Content"]
+        for index, row in df_unique.iterrows()
+    }
 
-    for dataset in datasets:
-        id_to_image = {}
-        for id in dataset.ids:
-            label = labels[labels["Accession No."] == id]["Scope and Content"].item()
-            if not label:
-                print(f"No label for image with id [{id}]")
-                label = ""
-            id_to_image[id] = Image(id, label)
-        dataset.id_to_image = id_to_image
-
-
-def load_or_create_image_embeddings(datasets: list[Dataset]):
+    image_glob = os.path.join(os.environ["IMAGE_FOLDER"], "*.jpg")
     with Cache("diskcache") as cache:
-        for dataset in datasets:
-            for image in dataset.id_to_image.values():
-                if image.id in cache:
-                    image.embedding = cache[image.id]
-                else:
-                    image.embedding = clip.get_image_embedding(image.image_path)
-                    cache.add(image.id, image.embedding)
+
+        image_paths = list(glob(image_glob))
+        for idx, image_path in enumerate(image_paths):
+            print(f"{idx} / {len(image_paths)}")
+            image = Image(image_path)
+
+            # Load label
+            image.label = labels_dict.get(image.id, "")
+
+            # Load embeddingn from cache if possible, otherwhise compute it.
+            if image.id in cache:
+                image.embedding = cache[image.id]
+            else:
+                print(f"Loading embedding for {image.image_path} and iamge id {image.id}")
+                image.embedding = clip.get_image_embedding(image.image_path)
+                cache.add(image.id, image.embedding)
+
+            # To determine relevancy, we need to know in which dataset the images is in.
+            for dataset in datasets:
+                if image.id in dataset.ids:
+                    image.from_dataset.append(dataset.name)
+                    dataset.images.append(image)
+            images.append(image)
+
+    print(f"Loaded {len(images)} images")
 
 
 @app.route("/")
@@ -73,6 +87,8 @@ app.jinja_env.globals.update(os=os, serve_image=serve_image)
 
 @app.route("/results", methods=["POST"])
 def results():
+    global images
+
     if not request.method == "POST":
         return
 
@@ -81,28 +97,7 @@ def results():
     print(similarity_measurement)
     search_query_embedding = clip.get_text_embedding(search_query)
 
-    # Load every picture only once, but check from where it comes from.
-    image_ids = set(
-        chain.from_iterable(
-            [[image_id for image_id in dataset.ids] for dataset in datasets]
-        )
-    )
-    images = []
-    for image_id in image_ids:
-        from_dataset = []
-        image = None
-        for dataset in datasets:
-            if image_id in dataset.ids:
-                from_dataset.append(dataset.name)
-                image = dataset.id_to_image[image_id]
-
-        if not image:
-            raise ValueError("Image ID in Dataset, but the image was not found???")
-
-        image.from_dataset = ", ".join(from_dataset)
-        images.append(image)
-
-    for idx, image in enumerate(images):
+    for image in images:
         if similarity_measurement == "Cosine Similarity":
             image.image_similarity = clip.calc_cosine_similarity(
                 search_query_embedding, image.embedding
@@ -140,12 +135,8 @@ if __name__ == "__main__":
     clip = Clip()
     print("Done")
 
-    print("Loading labels...")
-    load_labels_for_datasets(datasets)
-    print("Done")
-
-    print("Loading image embeddings...")
-    load_or_create_image_embeddings(datasets)
+    print("Loading images...")
+    load_all_images()
     print("Done")
 
     app.run(debug=True)
