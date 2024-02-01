@@ -3,11 +3,12 @@ import re
 
 
 class Dataset:
-    def __init__(self, name: str, ids: list[str]):
+    def __init__(self, name: str, keywords: list[str], ids: list[str]):
         self.name = name
         self.ids = ids
         self.is_active = False
         self.images: [Image] = []
+        self.keywords = [keyword.lower() for keyword in keywords]
 
 
 class Image:
@@ -24,6 +25,7 @@ class Image:
         self.embedding = None
         self.image_similarity = None
         self.rank = None
+        self.is_relevant = False
 
         if not os.path.isfile(self.image_path):
             raise ValueError(f"File does not exist: {self.image_path}")

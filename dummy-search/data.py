@@ -2,6 +2,7 @@ from classes import Dataset
 
 basketball = Dataset(
     "Basketball",
+    ["Basketball", "gym", "ball"],
     [
         "19752390753",
         "19752390800",
@@ -116,6 +117,7 @@ basketball = Dataset(
 
 basketball_extended = Dataset(
     "Basketball Extended",
+    basketball.keywords,
     basketball.ids
     + [
         "19753803109",
@@ -178,8 +180,23 @@ basketball_extended = Dataset(
     ],
 )
 
-indian = Dataset("Indian", [
+indian = Dataset(
+    "Indian",
+    [
+        "indian",
+        "native",
+        "first nations",
+        "chief",
+        "ceremony",
+        "Indigenous",
+        "tribe",
+        "Kainai",
+        "blood tribe",
+        "traditional dress",
+        "Blood Reserve",
+        "headdress",
+    ],
+    [],
+)
 
-])
-
-datasets: list[Dataset] = [basketball, basketball_extended]
+datasets: list[Dataset] = [basketball, basketball_extended, indian]

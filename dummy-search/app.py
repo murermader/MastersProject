@@ -1,6 +1,6 @@
 import os
 from glob import glob
-
+import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, send_from_directory
@@ -8,7 +8,6 @@ from clip import Clip
 from data import datasets
 from classes import Image
 from diskcache import Cache
-from itertools import chain
 
 load_dotenv(dotenv_path="../.env")
 dotenv_error_message = (
@@ -35,6 +34,7 @@ def load_all_images():
     # Load labels and convert the pandas datatable to a dictionary, because the lookup in a pandas datatable
     # is very slow.
     labels = pd.read_excel(os.environ["LABELS_FILE"])
+    labels = labels.replace(np.nan, "", regex=True)
     df_unique = labels.drop_duplicates(subset="Accession No.")
     labels_dict = {
         row["Accession No."]: row["Scope and Content"]
@@ -43,10 +43,8 @@ def load_all_images():
 
     image_glob = os.path.join(os.environ["IMAGE_FOLDER"], "*.jpg")
     with Cache("diskcache") as cache:
-
         image_paths = list(glob(image_glob))
         for idx, image_path in enumerate(image_paths):
-            print(f"{idx} / {len(image_paths)}")
             image = Image(image_path)
 
             # Load label
@@ -56,7 +54,9 @@ def load_all_images():
             if image.id in cache:
                 image.embedding = cache[image.id]
             else:
-                print(f"Loading embedding for {image.image_path} and iamge id {image.id}")
+                print(
+                    f"Loading embedding for {image.image_path} and iamge id {image.id}"
+                )
                 image.embedding = clip.get_image_embedding(image.image_path)
                 cache.add(image.id, image.embedding)
 
@@ -108,25 +108,69 @@ def results():
             )
 
         # Shorten label
-        max_length = 100
+        max_length = 500
         if len(image.label) > max_length:
             image.label = image.label[:max_length] + "..."
 
     if similarity_measurement == "Cosine Similarity":
-        images = sorted(images[:], key=lambda x: x.image_similarity, reverse=True)
-    else:
-        images = sorted(images[:], key=lambda x: x.image_similarity)
-
-    for idx, image in enumerate(images):
-        image.rank = idx + 1
-        print(
-            f"Rank: {idx + 1} Label: {image.label} Cosine Similarity: {image.image_similarity}"
+        sorted_images = sorted(
+            images[:], key=lambda x: x.image_similarity, reverse=True
         )
+    else:
+        sorted_images = sorted(images[:], key=lambda x: x.image_similarity)
+
+    all_relevant_keywords = set()
+
+    # Figure out which datasets are relevant for the search
+    relevant_datasets = set()
+    for dataset in datasets:
+
+        # If one keyword matches, extract all others
+        if search_query.lower() in dataset.keywords:
+            for keyword in dataset.keywords:
+                all_relevant_keywords.add(keyword)
+
+        # for keyword in dataset.keywords:
+        #     # Instead of checking for equality, we could also check for
+        #     # an embedding distance between the search term and the keyword?
+        #     # Either using clip, or something else like multilingual-e5-large
+        #     if search_query.lower() == keyword.lower():
+        #         relevant_datasets.add(dataset.name)
+        #         break
+
+    print(f"Relevant Keywords [{all_relevant_keywords}]")
+    print(f"Relevant datasets [{', '.join(relevant_datasets)}]")
+
+    for idx, image in enumerate(sorted_images):
+        # Determine relevancy:
+
+        # Relevancy based only on keyword occurence in label
+        for keyword in all_relevant_keywords:
+            if keyword in image.label:
+                image.is_relevant = True
+                break
+
+        # Based on affiliation with a dataset
+        for dataset in image.from_dataset:
+            if dataset in relevant_datasets:
+                image.is_relevant = True
+                break
+
+        # Add ranking information
+        image.rank = idx + 1
+
+    max_images = 100
+    if len(sorted_images) > max_images:
+        print(f"Limit results to top {max_images} images.")
+        sorted_images = sorted_images[:max_images]
+
+    print(f"{sum([1 for image in sorted_images if image.is_relevant])} out of the top {max_images} images are relevant")
+
     return render_template(
         "results.html",
         search_query=search_query,
         similarity_measurement=similarity_measurement,
-        images_by_image_similarity=images,
+        images_by_image_similarity=sorted_images,
     )
 
 
@@ -139,4 +183,4 @@ if __name__ == "__main__":
     load_all_images()
     print("Done")
 
-    app.run(debug=True)
+    app.run(debug=False)
