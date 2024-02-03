@@ -30,5 +30,3 @@ class Image:
         if not os.path.isfile(self.image_path):
             raise ValueError(f"File does not exist: {self.image_path}")
 
-    def from_dataset_as_str(self):
-        return ", ".join(self.from_dataset)

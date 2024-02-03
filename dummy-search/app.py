@@ -8,6 +8,9 @@ from clip import Clip
 from data import datasets
 from classes import Image
 from diskcache import Cache
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
+
 
 load_dotenv(dotenv_path="../.env")
 dotenv_error_message = (
@@ -124,7 +127,6 @@ def results():
     # Figure out which datasets are relevant for the search
     relevant_datasets = set()
     for dataset in datasets:
-
         # If one keyword matches, extract all others
         if search_query.lower() in dataset.keywords:
             for keyword in dataset.keywords:
@@ -159,12 +161,16 @@ def results():
         # Add ranking information
         image.rank = idx + 1
 
+    create_roc_curve(images, search_query)
+
     max_images = 100
     if len(sorted_images) > max_images:
         print(f"Limit results to top {max_images} images.")
         sorted_images = sorted_images[:max_images]
 
-    print(f"{sum([1 for image in sorted_images if image.is_relevant])} out of the top {max_images} images are relevant")
+    print(
+        f"{sum([1 for image in sorted_images if image.is_relevant])} out of the top {max_images} images are relevant"
+    )
 
     return render_template(
         "results.html",
@@ -172,6 +178,35 @@ def results():
         similarity_measurement=similarity_measurement,
         images_by_image_similarity=sorted_images,
     )
+
+
+def create_roc_curve(images: list[Image], query: str):
+    ranks = np.array([image.rank for image in images])
+    labels = np.array([1 if image.is_relevant else 0 for image in images])
+
+    fpr, tpr, thresholds = roc_curve(labels, ranks)
+    roc_auc = auc(fpr, tpr)
+
+    plt.figure()
+    plt.plot(
+        fpr, tpr, color="darkorange", lw=2, label=f"ROC curve (area = {roc_auc:.2f})"
+    )
+    plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title(f"Receiver Operating Characteristic for [{query}]")
+    plt.legend(loc="lower right")
+
+    # Specify the SVG file path
+    svg_file_path = f"roc_curve_{query}.svg"  # Adjust path as needed
+
+    # Save the plot as an SVG file
+    plt.savefig(svg_file_path, format="svg")
+
+    # Clear the figure to free memory
+    plt.clf()
 
 
 if __name__ == "__main__":
