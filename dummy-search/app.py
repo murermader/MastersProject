@@ -123,6 +123,7 @@ def results():
         sorted_images = sorted(images[:], key=lambda x: x.image_similarity)
 
     all_relevant_keywords = set()
+    all_relevant_keywords.add(search_query.lower())
 
     # Figure out which datasets are relevant for the search
     relevant_datasets = set()
@@ -148,7 +149,7 @@ def results():
 
         # Relevancy based only on keyword occurence in label
         for keyword in all_relevant_keywords:
-            if keyword in image.label:
+            if keyword in image.label.lower():
                 image.is_relevant = True
                 break
 
@@ -168,15 +169,15 @@ def results():
         print(f"Limit results to top {max_images} images.")
         sorted_images = sorted_images[:max_images]
 
-    print(
-        f"{sum([1 for image in sorted_images if image.is_relevant])} out of the top {max_images} images are relevant"
-    )
+    info_text = f"{sum([1 for image in sorted_images if image.is_relevant])} out of the top {max_images} images are relevant"
+    print(info_text)
 
     return render_template(
         "results.html",
         search_query=search_query,
         similarity_measurement=similarity_measurement,
         images_by_image_similarity=sorted_images,
+        info_text=info_text,
     )
 
 
