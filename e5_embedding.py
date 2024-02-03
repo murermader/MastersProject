@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     # normalize embeddings
     embeddings = F.normalize(embeddings, p=2, dim=1)
-    scores = (embeddings[:2] @ embeddings[2:].T) * 100
+    scores = (embeddings[:1] @ embeddings[3:].T) * 100
     print(scores.tolist())
     # Result: [[76.78286743164062, 75.78587341308594], [76.5135498046875, 79.4857406616211]]
     # ???
