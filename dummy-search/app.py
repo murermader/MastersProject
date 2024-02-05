@@ -163,6 +163,7 @@ def results():
         image.rank = idx + 1
 
     create_roc_curve(images, search_query)
+    create_roc_curve_manually(images, search_query)
 
     max_images = 100
     if len(sorted_images) > max_images:
@@ -179,6 +180,35 @@ def results():
         images_by_image_similarity=sorted_images,
         info_text=info_text,
     )
+
+
+def create_roc_curve_manually(images: list[Image], query: str):
+
+    tresholds = [20, 40, 60, 80, 100]
+    y = []  # tpr
+    x = []  # fpr
+    for t in tresholds:
+        positives = 0
+        true_positives = 0
+        false_positives = 0
+        negatives = 0
+
+        for i in range(t):
+            image = images[i]
+
+            if image.is_relevant:
+                positives += 1
+                true_positives += 1
+            else:
+                negatives += 1
+                false_positives += 1
+
+        tpr = true_positives / positives
+        fpr = false_positives / positives
+
+        print(f"t={t} P={positives} N={negatives} TP={true_positives} FP={false_positives} TPR={tpr} FPR={fpr}")
+        y.append(tpr)
+        x.append(fpr)
 
 
 def create_roc_curve(images: list[Image], query: str):
