@@ -1,6 +1,8 @@
 import copy
 import os
 from glob import glob
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
@@ -9,9 +11,9 @@ from clip import Clip
 from data import datasets
 from classes import Image
 from diskcache import Cache
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import auc
 import matplotlib.pyplot as plt
-
+from nltk.tokenize import word_tokenize
 
 load_dotenv(dotenv_path="../.env")
 dotenv_error_message = (
@@ -44,6 +46,21 @@ def load_all_images():
         row["Accession No."]: row["Scope and Content"]
         for index, row in df_unique.iterrows()
     }
+
+    lenghts = []
+    wordcount_label = []
+    with open("labels.txt", mode="w", encoding="utf-8-sig") as f:
+        for label in labels_dict.values():
+            if label == "No information available.":
+                continue
+
+            label = label.replace("\n", "")
+            f.write(label + "\n")
+            wordcount_label.append(len(word_tokenize(label)))
+            lenghts.append(len(label))
+
+    print(f"Average Label Length: {sum(lenghts) / len(lenghts)}")
+    print(f"Average Label Words : {sum(wordcount_label) / len(wordcount_label)}")
 
     image_glob = os.path.join(os.environ["IMAGE_FOLDER"], "*.jpg")
     with Cache("diskcache") as cache:
@@ -174,6 +191,40 @@ def results():
     )
 
 
+@app.route("/broken")
+def broken():
+    global images
+    images_copy = copy.deepcopy(images)
+
+    for image in images_copy:
+        if not image.label:
+            continue
+
+        label_embedding = clip.get_text_embedding(image.label)
+        image.image_similarity = clip.calc_cosine_similarity(
+            label_embedding, image.embedding
+        )
+
+    sorted_images = sorted(
+        images_copy[:], key=lambda x: x.image_similarity, reverse=True
+    )
+
+    for idx, image in enumerate(sorted_images):
+        # Add ranking information
+        image.rank = idx + 1
+
+    max_images = 100
+    if len(sorted_images) > max_images:
+        print(f"Limit results to top {max_images} images.")
+        sorted_images = sorted_images[:max_images]
+
+    return render_template(
+        "results.html",
+        similarity_measurement="Cosine Similarity",
+        images_by_image_similarity=sorted_images
+    )
+
+
 def create_roc_curve_manually(images: list[Image], query: str):
     # Limit graph to top x images
     # images = images[:500]
@@ -211,19 +262,21 @@ def create_roc_curve_manually(images: list[Image], query: str):
 
     roc_auc = auc(x, y)
 
-    plt.rcParams["svg.fonttype"] = "none"
+    # plt.rcParams["svg.fonttype"] = "none"
     plt.figure()
     plt.plot(x, y, color="darkorange", lw=2, label=f"Area = {roc_auc:.2f}")
     plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
     plt.xlim([0.0, 1])
     plt.ylim([0.0, 1])
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title(f"Receiver Operator Characteristic for [{query}]")
+    plt.xlabel("FPR")
+    plt.ylabel("TPR")
+    # plt.title(f"Receiver Operator Characteristic for [{query}]")
     plt.legend(loc="lower right")
 
+    Path("plots/").mkdir(exist_ok=True)
+
     # Specify the SVG file path
-    svg_file_path = f"roc_plot_{query}.svg"  # Adjust path as needed
+    svg_file_path = f"plots/roc_plot_{query}.svg"  # Adjust path as needed
 
     # Save the plot as an SVG file
     plt.savefig(svg_file_path, format="svg")

@@ -164,3 +164,5 @@ cython_debug/
 .idea
 dummy-search/diskcache
 dummy-search/roc_curve_*
+dummy-search/plots
+wordcloud.png
