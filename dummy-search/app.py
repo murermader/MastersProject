@@ -1,3 +1,4 @@
+import copy
 import os
 from glob import glob
 import numpy as np
@@ -65,9 +66,22 @@ def load_all_images():
 
             # To determine relevancy, we need to know in which dataset the images is in.
             for dataset in datasets:
-                if image.id in dataset.ids:
-                    image.from_dataset.append(dataset.name)
+                # Do not add image based on block list
+                if image.id in dataset.block_list:
+                    continue
+
+                # Add image based on allow list
+                if image.id in dataset.allow_list:
+                    image.from_dataset.add(dataset.name)
                     dataset.images.append(image)
+                    continue
+
+                # Add image based on keyword in label
+                for keyword in dataset.keywords:
+                    if keyword.lower() in image.label.lower():
+                        image.from_dataset.add(dataset.name)
+                        dataset.images.append(image)
+
             images.append(image)
 
     print(f"Loaded {len(images)} images")
@@ -92,6 +106,8 @@ app.jinja_env.globals.update(os=os, serve_image=serve_image)
 def results():
     global images
 
+    images_copy = copy.deepcopy(images)
+
     if not request.method == "POST":
         return
 
@@ -100,7 +116,7 @@ def results():
     print(similarity_measurement)
     search_query_embedding = clip.get_text_embedding(search_query)
 
-    for image in images:
+    for image in images_copy:
         if similarity_measurement == "Cosine Similarity":
             image.image_similarity = clip.calc_cosine_similarity(
                 search_query_embedding, image.embedding
@@ -117,53 +133,29 @@ def results():
 
     if similarity_measurement == "Cosine Similarity":
         sorted_images = sorted(
-            images[:], key=lambda x: x.image_similarity, reverse=True
+            images_copy[:], key=lambda x: x.image_similarity, reverse=True
         )
     else:
-        sorted_images = sorted(images[:], key=lambda x: x.image_similarity)
-
-    all_relevant_keywords = set()
-    all_relevant_keywords.add(search_query.lower())
+        sorted_images = sorted(images_copy[:], key=lambda x: x.image_similarity)
 
     # Figure out which datasets are relevant for the search
     relevant_datasets = set()
     for dataset in datasets:
-        # If one keyword matches, extract all others
-        if search_query.lower() in dataset.keywords:
-            for keyword in dataset.keywords:
-                all_relevant_keywords.add(keyword)
+        for search_term in search_query.lower().split(" "):
+            if search_term in dataset.keywords:
+                relevant_datasets.add(dataset.name)
+                continue
 
-        # for keyword in dataset.keywords:
-        #     # Instead of checking for equality, we could also check for
-        #     # an embedding distance between the search term and the keyword?
-        #     # Either using clip, or something else like multilingual-e5-large
-        #     if search_query.lower() == keyword.lower():
-        #         relevant_datasets.add(dataset.name)
-        #         break
-
-    print(f"Relevant Keywords [{all_relevant_keywords}]")
-    print(f"Relevant datasets [{', '.join(relevant_datasets)}]")
+    print(f"[{search_query}] Relevant datasets [{', '.join(relevant_datasets)}]")
 
     for idx, image in enumerate(sorted_images):
-        # Determine relevancy:
-
-        # Relevancy based only on keyword occurence in label
-        for keyword in all_relevant_keywords:
-            if keyword in image.label.lower():
-                image.is_relevant = True
-                break
-
-        # Based on affiliation with a dataset
-        for dataset in image.from_dataset:
-            if dataset in relevant_datasets:
-                image.is_relevant = True
-                break
+        # Determine relevancy based
+        image.is_relevant = len(image.from_dataset.intersection(relevant_datasets)) > 0
 
         # Add ranking information
         image.rank = idx + 1
 
-    create_roc_curve(images, search_query)
-    create_roc_curve_manually(images, search_query)
+    create_roc_curve_manually(sorted_images, search_query)
 
     max_images = 100
     if len(sorted_images) > max_images:
@@ -183,55 +175,55 @@ def results():
 
 
 def create_roc_curve_manually(images: list[Image], query: str):
+    # Limit graph to top x images
+    # images = images[:500]
 
-    tresholds = [20, 40, 60, 80, 100]
-    y = []  # tpr
-    x = []  # fpr
+    step_size = 10
+    tresholds = [t + step_size for t in range(0, len(images), step_size)]
+    y = [0]  # tpr
+    x = [0]  # fpr
+
+    positives = sum([1 for image in images if image.is_relevant])
+    negatives = sum([1 for image in images if not image.is_relevant])
+
     for t in tresholds:
-        positives = 0
         true_positives = 0
         false_positives = 0
-        negatives = 0
 
-        for i in range(t):
-            image = images[i]
-
+        for image in images[:t]:
             if image.is_relevant:
-                positives += 1
                 true_positives += 1
             else:
-                negatives += 1
                 false_positives += 1
 
-        tpr = true_positives / positives
-        fpr = false_positives / positives
+        if positives == 0:
+            tpr = 0
+        else:
+            tpr = true_positives / positives
 
-        print(f"t={t} P={positives} N={negatives} TP={true_positives} FP={false_positives} TPR={tpr} FPR={fpr}")
+        if negatives == 0:
+            fpr = 0
+        else:
+            fpr = false_positives / negatives
+
         y.append(tpr)
         x.append(fpr)
 
+    roc_auc = auc(x, y)
 
-def create_roc_curve(images: list[Image], query: str):
-    ranks = np.array([image.rank for image in images])
-    labels = np.array([1 if image.is_relevant else 0 for image in images])
-
-    fpr, tpr, thresholds = roc_curve(labels, ranks)
-    roc_auc = auc(fpr, tpr)
-
+    plt.rcParams["svg.fonttype"] = "none"
     plt.figure()
-    plt.plot(
-        fpr, tpr, color="darkorange", lw=2, label=f"ROC curve (area = {roc_auc:.2f})"
-    )
+    plt.plot(x, y, color="darkorange", lw=2, label=f"Area = {roc_auc:.2f}")
     plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
+    plt.xlim([0.0, 1])
+    plt.ylim([0.0, 1])
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
-    plt.title(f"Receiver Operating Characteristic for [{query}]")
+    plt.title(f"Receiver Operator Characteristic for [{query}]")
     plt.legend(loc="lower right")
 
     # Specify the SVG file path
-    svg_file_path = f"roc_curve_{query}.svg"  # Adjust path as needed
+    svg_file_path = f"roc_plot_{query}.svg"  # Adjust path as needed
 
     # Save the plot as an SVG file
     plt.savefig(svg_file_path, format="svg")

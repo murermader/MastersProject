@@ -3,9 +3,10 @@ import re
 
 
 class Dataset:
-    def __init__(self, name: str, keywords: list[str], ids: list[str]):
+    def __init__(self, name: str, keywords: list[str], allow_list: list[str], block_list: list[str]):
         self.name = name
-        self.ids = ids
+        self.allow_list = set(allow_list)
+        self.block_list = set(block_list)
         self.is_active = False
         self.images: [Image] = []
         self.keywords = [keyword.lower() for keyword in keywords]
@@ -21,7 +22,7 @@ class Image:
 
         # Will be computed later
         self.label = ""
-        self.from_dataset = []
+        self.from_dataset = set()
         self.embedding = None
         self.image_similarity = None
         self.rank = None
