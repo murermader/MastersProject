@@ -50,15 +50,13 @@ def load_all_images():
 
     lenghts = []
     wordcount_label = []
-    with open("labels.txt", mode="w", encoding="utf-8-sig") as f:
-        for label in labels_dict.values():
-            if label == "No information available.":
-                continue
+    for label in labels_dict.values():
+        if label == "No information available.":
+            continue
 
-            label = label.replace("\n", "")
-            f.write(label + "\n")
-            wordcount_label.append(len(word_tokenize(label)))
-            lenghts.append(len(label))
+        label = label.replace("\n", "")
+        wordcount_label.append(len(word_tokenize(label)))
+        lenghts.append(len(label))
 
     print(f"Average Label Length: {sum(lenghts) / len(lenghts)}")
     print(f"Average Label Words : {sum(wordcount_label) / len(wordcount_label)}")
