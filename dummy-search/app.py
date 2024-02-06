@@ -1,5 +1,6 @@
 import copy
 import os
+import re
 from glob import glob
 from pathlib import Path
 
@@ -95,7 +96,9 @@ def load_all_images():
 
                 # Add image based on keyword in label
                 for keyword in dataset.keywords:
-                    if keyword.lower() in image.label.lower():
+                    # Keywords needs to be surrounded by space or end of string, otherwise it would
+                    # be possible to match part of another word
+                    if re.search(rf"(\s+|\Z|\.|,|;|:){keyword.lower()}(\s+|\Z|\.|,|;|:)", image.label.lower()):
                         image.from_dataset.add(dataset.name)
                         dataset.images.append(image)
 
