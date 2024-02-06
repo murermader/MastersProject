@@ -172,6 +172,10 @@ def results():
         # Add ranking information
         image.rank = idx + 1
 
+    for k in [5, 10, 25, 50, 100, 200, 500]:
+        p_at_k = precision_at_k(sorted_images, k)
+        print(f"P@{k}: {p_at_k}")
+
     create_roc_curve_manually(sorted_images, search_query)
 
     max_images = 100
@@ -223,6 +227,17 @@ def broken():
         similarity_measurement="Cosine Similarity",
         images_by_image_similarity=sorted_images
     )
+
+
+def precision_at_k(images: list[Image], k: int):
+    images = images[:k]
+
+    correct = 0
+    for image in images:
+        if image.is_relevant:
+            correct += 1
+
+    return correct / k
 
 
 def create_roc_curve_manually(images: list[Image], query: str):
