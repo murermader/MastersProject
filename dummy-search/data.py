@@ -29,7 +29,6 @@ basketball = Dataset(
     ],
     block_list=[],
 )
-
 baseball = Dataset(
     name="Baseball",
     keywords=[
@@ -67,7 +66,6 @@ baseball = Dataset(
     ],
     block_list=[],
 )
-
 football = Dataset(
     name="Football",
     keywords=[
@@ -86,25 +84,99 @@ football = Dataset(
     allow_list=[],
     block_list=[],
 )
-
 soccer = Dataset(
     name="Soccer",
     keywords=["soccer", "European football"],
     allow_list=[],
     block_list=[],
 )
+women = Dataset(
+    name="Women",
+    keywords=["woman", "women", "female", "wife", "queen", "she"],
+    allow_list=[],
+    block_list=[],
+)
+men = Dataset(
+    name="Men",
+    keywords=["man", "men", "male", "husband", "king", "he"],
+    allow_list=[],
+    block_list=[],
+)
+cars = Dataset(
+    name="Auto",
+    keywords=[
+        "auto",
+        "car",
+        "cars",
+        "vehicle",
+        "vehicles",
+        "automobile",
+        "automobiles",
+        "parking lot",
+        "tire",
+        "truck",
+        "train-truck",
+        "tractor",
 
-# basketball_extended = Dataset(
-#     "Basketball Extended",
-#     basketball.keywords,
-#     basketball.allow_list.union(
-#         set(
-#             "1991107616835",  # Photo of an emtpy gymnasium (visible basketball hoop and ground markings)
-#         )
-#     ),
-#     [],
-# )
 
+        # Car brands
+        "Ford",
+        "Chrysler",
+        "Duesenberg",
+        "Chevrolet",
+        "Chevy",
+        "Willys-Overland",
+        "Tucker",
+        "Oldsmobile",
+        "Cadillac",
+        "Mustang",
+        "Camaro",
+        "Pontiac",
+        "AMC",
+        "Dodge",
+        "Buick",
+        "Alfa Romeo",
+        "Jaguar",
+        "British Leyland",
+        "Ferrari",
+        "Porsche",
+        "BMW",
+        "Plymouth",
+        "Mercedes-Benz",
+        "Lotus",
+        "Datsun",
+        "Lamborghini",
+        "Volvo",
+        "Studebaker",
+        "Jeep",
+        "Road Patrol",
+
+
+    ],
+    allow_list=[
+        "1991107618405",
+        "19752608087b",
+        "199110767246",
+        "199110768726",
+        "199110769073",
+        "1991107617414",
+        "199110761890",
+        "1991107619903",
+        "199110768722",
+        "19752303298",
+        "19752303223",
+        "199110765469",
+        "199110769074",
+        "19752606016",
+        "199110767324",
+        "199110769072",
+        "199110766700",
+        "199110769713",
+        "19753500006",
+        "19752390781"
+    ],
+    block_list=[],
+)
 indian = Dataset(
     name="Indian",
     keywords=[
@@ -127,7 +199,9 @@ indian = Dataset(
         "1991107618703",
         "19754011095",
     ],
-    block_list=[],
+    block_list=[
+        "199110765217"
+    ],
 )
 
 datasets: list[Dataset] = [
@@ -136,4 +210,7 @@ datasets: list[Dataset] = [
     football,
     soccer,
     indian,
+    women,
+    men,
+    cars,
 ]

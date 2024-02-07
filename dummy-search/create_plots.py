@@ -64,7 +64,7 @@ if __name__ == "__main__":
     images = load_all_images()
     print("Done")
 
-    queries = ["basketball", "baseball", "baseball", "football", "native"]
+    queries = ["basketball", "baseball", "baseball", "football", "car", "native"]
     data = {}
 
     for q in queries:

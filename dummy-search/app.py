@@ -332,7 +332,7 @@ def create_histogram(images: list[Image], query: str):
     # Generate the histogram
     plt.figure(figsize=(10, 6))
     plt.hist(ranks, bins=bins, alpha=0.7, edgecolor="black")
-    plt.ylim([0, 250])
+    plt.ylim([0, 500])
 
     # Calculate the median rank of the relevant images
     median_rank = np.median(ranks)

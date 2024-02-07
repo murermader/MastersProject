@@ -1,5 +1,3 @@
-import os
-import re
 from clip import Clip
 from diskcache import Cache
 from glob import glob
