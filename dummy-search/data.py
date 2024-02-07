@@ -1,9 +1,9 @@
 from classes import Dataset
 
 basketball = Dataset(
-    "Basketball",
-    ["Basketball"],
-    [
+    name="Basketball",
+    keywords=["Basketball"],
+    allow_list=[
         "1991107619818",
         "19753803125",
         "19753803009",
@@ -25,68 +25,73 @@ basketball = Dataset(
         "19753803041",
         "1991107610782",
         "199110767085",
-        "19753803070"
+        "19753803070",
     ],
-    # [
-    #     "19753803109",
-    #     "19753803117",
-    #     "19753803118",
-    #     "19753803119",
-    #     "19753803120",
-    #     "19753803121",
-    #     "19753803123",
-    #     "19753803124",
-    #     "19753803126",
-    #     "19753803127",
-    #     "19753803129",
-    #     "19753803130",
-    #     "19753803133",
-    #     "19753803134",
-    #     "19753803135",
-    #     "19753803149",
-    #     "19753803169",
-    #     "19753803170",
-    #     "19753803173",
-    #     "19753803179",
-    #     "19753803180",
-    #     "19753803186",
-    #     "19753803187",
-    #     "19753803191",
-    #     "19753803192",
-    #     "19753803193",
-    #     "19754341011",
-    #     "19754341013",
-    #     "199110767087",
-    #     "199110767088",
-    #     "199110768849",
-    #     "199110768850",
-    #     "199110768851",
-    #     "19752305275",
-    #     "19752390802",
-    #     "19753803008",
-    #     "19753803019",
-    #     "19753803026",
-    #     "19753803038",
-    #     "19753803039",
-    #     "19753803040",
-    #     "19753803043",
-    #     "19753803048",
-    #     "19753803050",
-    #     "19753803063",
-    #     "19753803065",
-    #     "19753803071",
-    #     "19753803076",
-    #     "19753803086",
-    #     "19753803090",
-    #     "19753803091",
-    #     "19753803093",
-    #     "19753803095",
-    #     "19753803096",
-    #     "19753803097",
-    #     "19753803099",
-    #     "19753803101",
-    # ],
-    [],
+    block_list=[],
+)
+
+baseball = Dataset(
+    name="Baseball",
+    keywords=[
+        "baseball",
+        "ball team",
+        "ball players",
+        "cardinals",
+        "ball tournament",
+        "white sox",
+        "lethbridge north stars",
+        "ball park",
+        "ball field",
+        "fastball team" "hardball team",
+        "Little League",
+    ],
+    allow_list=[
+        "199110769122",
+        "199110768824",
+        "199110767797",
+        "1991107617706",
+        "19753802006",
+        "199110769125",
+        "1991107618048",
+        "19753802084",
+        "199110767502",
+        "19753802135",
+        "1991107617705",
+        "19753802081",
+        "1991107618205",
+        "19753802090",
+        "19753802082",
+        "19753802097",
+        "19753802101",
+        "19752311054",
+    ],
+    block_list=[],
+)
+
+football = Dataset(
+    name="Football",
+    keywords=[
+        "quarterback",
+        "football",
+        "touchdown",
+        "interception",
+        "sack",
+        "fumble",
+        "punt",
+        "hail mary",
+        "snap",
+        "end zone",
+        "field goal",
+    ],
+    allow_list=[],
+    block_list=[],
+)
+
+soccer = Dataset(
+    name="Soccer",
+    keywords=["soccer", "European football"],
+    allow_list=[],
+    block_list=[],
 )
 
 # basketball_extended = Dataset(
@@ -101,8 +106,8 @@ basketball = Dataset(
 # )
 
 indian = Dataset(
-    "Indian",
-    [
+    name="Indian",
+    keywords=[
         "indian",
         "native",
         "first nations",
@@ -117,16 +122,18 @@ indian = Dataset(
         "headdress",
         "Red Bull Society",
     ],
-    [
+    allow_list=[
         "1991107618702",
         "1991107618703",
         "19754011095",
     ],
-    [],
+    block_list=[],
 )
 
 datasets: list[Dataset] = [
     basketball,
-    # basketball_extended,
+    baseball,
+    football,
+    soccer,
     indian,
 ]
