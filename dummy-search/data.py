@@ -2,7 +2,7 @@ from classes import Dataset
 
 basketball = Dataset(
     name="Basketball",
-    keywords=["Basketball"],
+    keyword_allow_list=["Basketball"],
     allow_list=[
         "1991107619818",
         "19753803125",
@@ -27,11 +27,10 @@ basketball = Dataset(
         "199110767085",
         "19753803070",
     ],
-    block_list=[],
 )
 baseball = Dataset(
     name="Baseball",
-    keywords=[
+    keyword_allow_list=[
         "baseball",
         "ball team",
         "ball players",
@@ -64,11 +63,10 @@ baseball = Dataset(
         "19753802101",
         "19752311054",
     ],
-    block_list=[],
 )
 football = Dataset(
     name="Football",
-    keywords=[
+    keyword_allow_list=[
         "quarterback",
         "football",
         "touchdown",
@@ -86,25 +84,19 @@ football = Dataset(
 )
 soccer = Dataset(
     name="Soccer",
-    keywords=["soccer", "European football"],
-    allow_list=[],
-    block_list=[],
+    keyword_allow_list=["soccer", "European football"],
 )
 women = Dataset(
     name="Women",
-    keywords=["woman", "women", "female", "wife", "queen", "she"],
-    allow_list=[],
-    block_list=[],
+    keyword_allow_list=["woman", "women", "female", "wife", "queen", "she"],
 )
 men = Dataset(
     name="Men",
-    keywords=["man", "men", "male", "husband", "king", "he"],
-    allow_list=[],
-    block_list=[],
+    keyword_allow_list=["man", "men", "male", "husband", "king", "he"],
 )
 cars = Dataset(
     name="Auto",
-    keywords=[
+    keyword_allow_list=[
         "auto",
         "car",
         "cars",
@@ -150,8 +142,6 @@ cars = Dataset(
         "Studebaker",
         "Jeep",
         "Road Patrol",
-
-
     ],
     allow_list=[
         "1991107618405",
@@ -175,15 +165,14 @@ cars = Dataset(
         "19753500006",
         "19752390781"
     ],
-    block_list=[],
 )
 indian = Dataset(
     name="Indian",
-    keywords=[
+    keyword_allow_list=[
         "indian",
         "native",
         "first nations",
-        "chief",
+        # "chief",
         # "ceremony",
         "Indigenous",
         "tribe",
@@ -194,13 +183,23 @@ indian = Dataset(
         "headdress",
         "Red Bull Society",
     ],
+    keyword_block_list=[
+        "Lethbridge Native Sons"
+    ],
     allow_list=[
         "1991107618702",
         "1991107618703",
         "19754011095",
     ],
     block_list=[
-        "199110765217"
+        "199110765217",
+        "19752903015",
+        "19752904007",
+        "19752908144",
+        "19752908145",
+        "19753000008",
+        "19753000082",
+        "19753000081",
     ],
 )
 

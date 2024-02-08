@@ -28,6 +28,11 @@
             cursor: pointer;
         }
 
+        .note {
+            font-size: 0.9rem;
+            margin-top: 0.5em;
+            color: #4c4c4c;
+        }
 
     </style>
     <script>
@@ -60,13 +65,36 @@
         <input type="text" id="search_query" name="search_query" required>
         <button id="submit" type="submit">Search</button>
     </div>
+    <div class="note">
+        <span>Seperate queries by ';'</span>
+        <br>
+        <span>Only the first query is shown, the others will be included in the generated plots.</span>
+    </div>
     <div>
-          <span style="display:block; margin-top: 1rem">Measure embedding similarity with</span>
-          <input type="radio" id="cos" name="similarity_measurement" value="Cosine Similarity" checked>
-          <label for="cos">Cosine Similarity</label><br>
+        <span style="display:block; margin-top: 1rem">Measure embedding similarity with</span>
+        <input type="radio" id="cos" name="similarity_measurement" value="Cosine Similarity" checked>
+        <label for="cos">Cosine Similarity</label><br>
 
-          <input type="radio" id="l2" name="similarity_measurement" value="L2 Distance">
-          <label for="l2">L2 Distance</label><br>
+        <input type="radio" id="l2" name="similarity_measurement" value="L2 Distance">
+        <label for="l2">L2 Distance</label><br>
+    </div>
+    <div>
+        <span style="display:block; margin-top: 1rem">Extra Options</span>
+
+        <input type="checkbox" id="random-system" name="random-system" value="Random">
+        <label for="random-system">Use random value for embedding distance</label><br>
+
+        <input type="checkbox" id="normalize-system" name="normalize-system" value="normalize">
+        <label for="normalize-system">Normalize (all datasets have the same size)</label><br>
+
+        <input type="checkbox" id="correct-system" name="correct-system" value="100% correct">
+        <label for="correct-system">100% correct</label><br>
+
+        <input type="checkbox" id="incorrect-system" name="incorrect-system" value="0% correct">
+        <label for="incorrect-system">0% correct</label><br>
+
+        <input type="checkbox" id="half_correct-system" name="half_correct-system" value="50% correct">
+        <label for="half_correct-system">50% correct</label><br>
     </div>
     <span id="loading">Loading...</span>
 </form>
