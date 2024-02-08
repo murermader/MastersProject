@@ -205,19 +205,41 @@ def results():
     search_query = request.form["search_query"]
     if not search_query:
         return
+    similarity_measurement = request.form["similarity_measurement"]
 
     queries = [q.strip() for q in search_query.split(";")]
-    similarity_measurement = request.form["similarity_measurement"]
+
+    # To make sure that we are always generating the same graphs
+    queries = queries.sort()
     options = set()
+    data = {}
 
     # Sanity Checks
-    include_correct = request.form.get("correct-system") is not None
-    include_incorrect = request.form.get("incorrect-system") is not None
-    include_half_correct = request.form.get("half_correct-system") is not None
+    if request.form.get("correct-system") is not None:
+        print("Add Curve 100% correct")
+        images_copy: list[Image] = copy.deepcopy(images)
+        for i, image in enumerate(images_copy):
+            image.is_relevant = i < 1000
+            image.rank = i + 1
+        data["100% correct"] = images_copy
+    if request.form.get("incorrect-system") is not None:
+        print("Add Curve 100% incorrect")
+        images_copy: list[Image] = copy.deepcopy(images)
+        for i, image in enumerate(images_copy):
+            image.is_relevant = False
+            image.rank = i + 1
+        data["100% incorrect"] = images_copy
+    if request.form.get("half_correct-system") is not None:
+        print("Add Curve 50% correct")
+        images_copy: list[Image] = copy.deepcopy(images)
+        for i, image in enumerate(images_copy):
+            image.is_relevant = i % 2 == 0
+            image.rank = i + 1
+        data["50% correct"] = images_copy
+
     random = request.form.get("random-system") is not None
     normalize = request.form.get("normalize-system") is not None
 
-    data = {}
     result_query, result_images = None, None
 
     print(f"Queries: {queries}")
@@ -255,7 +277,6 @@ def results():
             # 4. Check if successful
             relevant_image_counter = {}
             for rd in datasets_to_check:
-                print(f"Init [{rd.name}] to 0.")
                 relevant_image_counter[rd.name] = 0
 
             for image in images_copy:
@@ -270,9 +291,7 @@ def results():
             options.add("random")
             similarity_measurement = "Random"
 
-        sorted_images, label = rank_images(
-            images_copy, q, similarity_measurement, clip
-        )
+        sorted_images, label = rank_images(images_copy, q, similarity_measurement, clip)
 
         # Calculate P@K
         for k in [5, 10, 25, 50, 100, 200, 500]:
@@ -282,10 +301,7 @@ def results():
         if result_query is None:
             result_query = label
             result_images = sorted_images
-        print(f"data[{label}] = {len(sorted_images)} images")
         data[label] = sorted_images
-
-    print(f"Keys={list(data.keys())}")
 
     # Create plots
     create_histogram(data, options)
@@ -384,7 +400,10 @@ def create_histogram(data: dict[str, list[Image]], options: set[str]):
 
     labels = []
     for query, ranks in zip(data.keys(), all_ranks):
-        labels.append(f"{query} ( Median = {int(np.median(ranks))})")
+        if len(ranks) == 0:
+            labels.append(f"{query}")
+        else:
+            labels.append(f"{query} (median = {int(np.median(ranks))})")
 
     default_width, default_height = rcParams["figure.figsize"]
     plt.figure(figsize=(default_width * 2, default_height * 1.5))
