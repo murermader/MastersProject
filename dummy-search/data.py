@@ -2,6 +2,7 @@ from classes import Dataset
 
 basketball = Dataset(
     name="Basketball",
+    color="#26828e",
     keyword_allow_list=["Basketball"],
     allow_list=[
         "1991107619818",
@@ -30,6 +31,7 @@ basketball = Dataset(
 )
 baseball = Dataset(
     name="Baseball",
+    color="#a0da39",
     keyword_allow_list=[
         "baseball",
         "ball team",
@@ -40,7 +42,8 @@ baseball = Dataset(
         "lethbridge north stars",
         "ball park",
         "ball field",
-        "fastball team" "hardball team",
+        "fastball team",
+        "hardball team",
         "Little League",
     ],
     allow_list=[
@@ -66,6 +69,7 @@ baseball = Dataset(
 )
 football = Dataset(
     name="Football",
+    color="#4ac16d",
     keyword_allow_list=[
         "quarterback",
         "football",
@@ -84,18 +88,22 @@ football = Dataset(
 )
 soccer = Dataset(
     name="Soccer",
+    color="#1fa187",
     keyword_allow_list=["soccer", "European football"],
 )
 women = Dataset(
     name="Women",
+    color="#277f8e",
     keyword_allow_list=["woman", "women", "female", "wife", "queen", "she"],
 )
 men = Dataset(
     name="Men",
+    color="#365c8d",
     keyword_allow_list=["man", "men", "male", "husband", "king", "he"],
 )
 cars = Dataset(
     name="Auto",
+    color="#46327e",
     keyword_allow_list=[
         "auto",
         "car",
@@ -109,8 +117,6 @@ cars = Dataset(
         "truck",
         "train-truck",
         "tractor",
-
-
         # Car brands
         "Ford",
         "Chrysler",
@@ -163,11 +169,12 @@ cars = Dataset(
         "199110766700",
         "199110769713",
         "19753500006",
-        "19752390781"
+        "19752390781",
     ],
 )
 indian = Dataset(
     name="Indian",
+    color="#fde725",
     keyword_allow_list=[
         "indian",
         "native",
@@ -183,9 +190,7 @@ indian = Dataset(
         "headdress",
         "Red Bull Society",
     ],
-    keyword_block_list=[
-        "Lethbridge Native Sons"
-    ],
+    keyword_block_list=["Lethbridge Native Sons"],
     allow_list=[
         "1991107618702",
         "1991107618703",
@@ -208,8 +213,8 @@ datasets: list[Dataset] = [
     baseball,
     football,
     soccer,
+    cars,
     indian,
     women,
     men,
-    cars,
 ]

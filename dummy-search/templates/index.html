@@ -64,6 +64,7 @@
         <label for="search_query">Topic:</label>
         <input type="text" id="search_query" name="search_query" required>
         <button id="submit" type="submit">Search</button>
+        <span id="loading">Loading...</span>
     </div>
     <div class="note">
         <span>Seperate queries by ';'</span>
@@ -96,7 +97,6 @@
         <input type="checkbox" id="half_correct-system" name="half_correct-system" value="50% correct">
         <label for="half_correct-system">Add Sanity Check: 50% correct</label><br>
     </div>
-    <span id="loading">Loading...</span>
 </form>
 <h1 style="margin-top: 2rem">Datasets</h1>
 {% for dataset in datasets %}

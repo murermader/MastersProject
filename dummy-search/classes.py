@@ -6,6 +6,7 @@ class Dataset:
     def __init__(
         self,
         name: str,
+        color: str,
         keyword_allow_list: list[str] = None,
         keyword_block_list: list[str] = None,
         allow_list: list[str] = None,
@@ -22,6 +23,7 @@ class Dataset:
             block_list = []
 
         self.name = name
+        self.color = color
         self.allow_list = set(allow_list)
         self.block_list = set(block_list)
         self.is_active = False

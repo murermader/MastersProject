@@ -208,11 +208,12 @@ def results():
     similarity_measurement = request.form["similarity_measurement"]
 
     queries = [q.strip() for q in search_query.split(";")]
-
     # To make sure that we are always generating the same graphs
-    queries = queries.sort()
+    queries.sort()
     options = set()
     data = {}
+    precision_data = {}
+    precision_k_values = [5, 10, 25, 50, 100, 200, 500]
 
     # Sanity Checks
     if request.form.get("correct-system") is not None:
@@ -237,7 +238,7 @@ def results():
             image.rank = i + 1
         data["50% correct"] = images_copy
 
-    random = request.form.get("random-system") is not None
+    randomize = request.form.get("random-system") is not None
     normalize = request.form.get("normalize-system") is not None
 
     result_query, result_images = None, None
@@ -245,6 +246,7 @@ def results():
     print(f"Queries: {queries}")
     for q in queries:
         images_copy: list[Image] = copy.deepcopy(images)
+        random.Random(123).shuffle(images_copy)
         datasets_copy: list[Dataset] = copy.copy(datasets)
 
         if normalize:
@@ -287,25 +289,47 @@ def results():
 
             print(f"Normalized Dataset Sizes: {relevant_image_counter}")
 
-        if random:
+        if randomize:
             options.add("random")
             similarity_measurement = "Random"
 
         sorted_images, label = rank_images(images_copy, q, similarity_measurement, clip)
 
+        precision_data[label] = []
+
         # Calculate P@K
-        for k in [5, 10, 25, 50, 100, 200, 500]:
+        for k in precision_k_values:
             p_at_k = precision_at_k(sorted_images, k)
             print(f"P@{k}: {p_at_k}")
+            precision_data[label].append(p_at_k)
 
         if result_query is None:
             result_query = label
             result_images = sorted_images
         data[label] = sorted_images
 
+    # Always pick the same colors for each dataset, to make the comparioson between
+    # plots in the paper easier.
+    colors = []
+    for key in data.keys():
+        if key == "50% correct":
+            colors.append("#fc8961")
+            continue
+        if key == "100% incorrect":
+            colors.append("#b73779")
+            continue
+        if key == "100% correct":
+            colors.append("#51127c")
+            continue
+
+        for dataset in datasets:
+            if key == dataset.name:
+                colors.append(dataset.color)
+
     # Create plots
-    create_histogram(data, options)
-    create_roc_curve(data, options)
+    create_precision_table(list(data.keys()), precision_k_values, precision_data)
+    create_histogram(data, colors, options)
+    create_roc_curve(data, colors, options)
 
     # Limit number of images shown in results
     max_images = 100
@@ -381,7 +405,36 @@ def save_plot(plt, plot: str, query: str, options: set[str]):
     plt.clf()
 
 
-def create_histogram(data: dict[str, list[Image]], options: set[str]):
+def create_precision_table(
+    queries: list[str], k_values: list[int], precision_data: dict[str, list[float]]
+):
+    header_values = [rf"\textbf{{{h}}}" for h in ["Query"] + k_values]
+    header = " & ".join(header_values)
+
+    rows = []
+    for query, p_at_k_values in zip(queries, precision_data.values()):
+        row = query + " & " + " & ".join([str(p) for p in p_at_k_values]) + r" \\"
+        rows.append(row)
+
+    new_line = "\n"
+    table = rf"""
+\begin{{table}}[htb!]
+    \centering
+    \begin{{tabular}}{{l|rrrrr}}
+    {header} \\
+    \hline
+    {new_line.join(rows)}
+    \end{{tabular}}
+    \caption{{P@K values for varying thresholds}}
+    \label{{table:pAtk}}
+\end{{table}}    
+"""
+    print(table)
+
+
+def create_histogram(
+    data: dict[str, list[Image]], colors: list[str], options: set[str]
+):
     total_bins = 20
 
     max_rank = 0
@@ -408,7 +461,13 @@ def create_histogram(data: dict[str, list[Image]], options: set[str]):
     default_width, default_height = rcParams["figure.figsize"]
     plt.figure(figsize=(default_width * 2, default_height * 1.5))
     plt.hist(
-        all_ranks, bins=bins, alpha=0.7, histtype="bar", edgecolor="black", label=labels
+        all_ranks,
+        bins=bins,
+        alpha=0.7,
+        histtype="bar",
+        edgecolor="black",
+        label=labels,
+        color=colors,
     )
 
     plt.ylabel("Relevant Images Per Bin")
@@ -419,44 +478,73 @@ def create_histogram(data: dict[str, list[Image]], options: set[str]):
     save_plot(plt, "histogram", "-".join(data.keys()), options)
 
 
-def create_roc_curve(data: dict[str, list[Image]], options: set[str]):
+def create_roc_curve(
+    data: dict[str, list[Image]], colors: list[str], options: set[str]
+):
+    i = 0
+
+    default_width, default_height = rcParams["figure.figsize"]
+    plt.figure(figsize=(default_width, default_height))
+
     for query, images in data.items():
         step_size = 10
         thresholds = [t + step_size for t in range(0, len(images), step_size)]
         y = [0]  # tpr
         x = [0]  # fpr
-
         positives = sum(1 for image in images if image.is_relevant)
         negatives = sum(1 for image in images if not image.is_relevant)
 
         for t in thresholds:
             true_positives = 0
             false_positives = 0
-
             for image in images[:t]:
                 if image.is_relevant:
                     true_positives += 1
                 else:
                     false_positives += 1
-
             tpr = true_positives / positives if positives else 0
             fpr = false_positives / negatives if negatives else 0
-
             y.append(tpr)
             x.append(fpr)
 
-        roc_auc = auc(x, y)
-
         # Plot the ROC curve for the current query
-        plt.plot(x, y, lw=2, label=f"{query} (area = {roc_auc:.2f})")
+        plt.plot(x, y, lw=2, label=f"{query} (area = {auc(x, y):.2f})", color=colors[i])
+        i += 1
 
-    # Plot the diagonal line
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
     plt.legend(loc="lower right")
     save_plot(plt, "roc", "-".join(data.keys()), options)
+
+
+def print_dataset_table():
+    rows = []
+    for dataset in [d for d in datasets if d.name.lower() not in ["men", "women"]]:
+        row = []
+        row.append(dataset.name)
+
+        keywords = [k for k in dataset.keywords_allow_list] + [f"-{k}" for k in dataset.keywords_block_list]
+        row.append(', '.join(keywords))
+
+        row.append(str(len(dataset.images)))
+        rows.append("    " + " & ".join(row) + r" \\")
+
+    new_line = "\n"
+    table = rf"""
+\begin{{table}}[h]
+    \centering
+    \begin{{tabular}}{{l p{{0.56\linewidth}} r}}
+    \textbf{{Dataset}}    & \textbf{{Keywords}} & \textbf{{\# of Images}} \\
+    \hline
+{new_line.join(rows)}
+    \end{{tabular}}
+    \caption{{Manually curated datasets}}
+    \label{{table:datasets}}
+\end{{table}}
+"""
+    print(table)
 
 
 if __name__ == "__main__":
@@ -466,6 +554,7 @@ if __name__ == "__main__":
 
     print("Loading images...")
     load_all_images()
+    print_dataset_table()
     print("Done")
 
     app.run(debug=False, port=3000)
