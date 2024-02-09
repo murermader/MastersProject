@@ -148,6 +148,9 @@ cars = Dataset(
         "Studebaker",
         "Jeep",
         "Road Patrol",
+        "motorist",
+        "motorists",
+        "1956 model",
     ],
     allow_list=[
         "1991107618405",
@@ -170,7 +173,11 @@ cars = Dataset(
         "199110769713",
         "19753500006",
         "19752390781",
+        "19752901030",
     ],
+    block_list=[
+        "train",
+    ]
 )
 indian = Dataset(
     name="Indian",

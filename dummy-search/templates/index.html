@@ -88,6 +88,11 @@
         <input type="checkbox" id="normalize-system" name="normalize-system" value="normalize">
         <label for="normalize-system">Normalize dataset sizes</label><br>
 
+        <input type="checkbox" id="noise-system" name="noise-system" value="noise">
+        <label for="noise-system">
+            <span>Add </span> <input id="noise-percentage" name="noise-percentage" style="width: 50px;" value="50" type="number" min="1" max="200"><span> % noise to first query</span>
+        </label><br>
+
         <input type="checkbox" id="correct-system" name="correct-system" value="100% correct">
         <label for="correct-system">Add Sanity Check: 100% correct</label><br>
 

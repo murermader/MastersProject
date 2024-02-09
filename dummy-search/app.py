@@ -102,7 +102,7 @@ def load_all_images():
                     # Keywords needs to be surrounded by space or end of string, otherwise it would
                     # be possible to match part of another word
                     if re.search(
-                        rf"(\s+|\Z|\.|,|;|:){keyword.lower()}(\s+|\Z|\.|,|;|:)",
+                        rf"(\s+|\Z|\.|,|;|:|-){keyword.lower()}(\s+|\Z|\.|,|;|:|-)",
                         image.label.lower(),
                     ):
                         is_blocked = True
@@ -115,7 +115,7 @@ def load_all_images():
                     # Keywords needs to be surrounded by space or end of string, otherwise it would
                     # be possible to match part of another word
                     if re.search(
-                        rf"(\s+|\Z|\.|,|;|:){keyword.lower()}(\s+|\Z|\.|,|;|:)",
+                        rf"(\s+|\Z|\.|,|;|:|-){keyword.lower()}(\s+|\Z|\.|,|;|:|-)",
                         image.label.lower(),
                     ):
                         # if len(dataset.images) < 233:
@@ -145,7 +145,11 @@ app.jinja_env.globals.update(os=os, serve_image=serve_image)
 
 
 def rank_images(
-    images: list[Image], search_query: str, similarity_measurement: str, clip: Clip
+    images: list[Image],
+    search_query: str,
+    similarity_measurement: str,
+    clip: Clip,
+    add_noise_percentage: float = None,
 ):
     print(f"Rank images for query [{search_query}] with [{similarity_measurement}]")
     search_query_embedding = clip.get_text_embedding(search_query)
@@ -166,6 +170,15 @@ def rank_images(
         max_length = 500
         if len(image.label) > max_length:
             image.label = image.label[:max_length] + "..."
+
+    if add_noise_percentage:
+        print(
+            f"Adding {add_noise_percentage * 100}% noise to image ranking for query [{search_query}]"
+        )
+        random.seed(42)
+        for image in images:
+            noise_factor = 1 + (add_noise_percentage * random.uniform(-1, 1))
+            image.image_similarity *= noise_factor
 
     if (
         similarity_measurement == "Cosine Similarity"
@@ -240,13 +253,13 @@ def results():
 
     randomize = request.form.get("random-system") is not None
     normalize = request.form.get("normalize-system") is not None
+    add_noise = request.form.get("noise-system") is not None
 
     result_query, result_images = None, None
 
     print(f"Queries: {queries}")
-    for q in queries:
+    for idx, q in enumerate(queries):
         images_copy: list[Image] = copy.deepcopy(images)
-        random.Random(123).shuffle(images_copy)
         datasets_copy: list[Dataset] = copy.copy(datasets)
 
         if normalize:
@@ -293,7 +306,17 @@ def results():
             options.add("random")
             similarity_measurement = "Random"
 
-        sorted_images, label = rank_images(images_copy, q, similarity_measurement, clip)
+        noise = None
+        if idx == 0 and add_noise:
+            noise = int(request.form["noise-percentage"]) / 100
+            options.add(f"noise_{noise}")
+
+        sorted_images, label = rank_images(
+            images_copy, q, similarity_measurement, clip, noise
+        )
+
+        if idx == 0 and add_noise:
+            label += f" ({int(noise * 100)}% noise)"
 
         precision_data[label] = []
 
@@ -323,7 +346,7 @@ def results():
             continue
 
         for dataset in datasets:
-            if key == dataset.name:
+            if key.startswith(dataset.name):
                 colors.append(dataset.color)
 
     # Create plots
@@ -449,7 +472,12 @@ def create_histogram(
         ranks = [img.rank for img in relevant_images]
         all_ranks.append(ranks)
 
+    print(f"Bin size: {(max_rank - 1) / total_bins}")
+
     bins = np.linspace(1, max_rank, total_bins + 1)
+
+    # Calculate the midpoints of bins for x-axis ticks
+    bin_centers = 0.5 * (bins[:-1] + bins[1:])
 
     labels = []
     for query, ranks in zip(data.keys(), all_ranks):
@@ -473,7 +501,7 @@ def create_histogram(
     plt.ylabel("Relevant Images Per Bin")
     plt.legend()  # Add a legend to show query names
 
-    plt.xticks(rotation=90)  # Rotate x-axis labels for better readability
+    plt.xticks(bin_centers, rotation=90)
 
     save_plot(plt, "histogram", "-".join(data.keys()), options)
 
@@ -525,8 +553,10 @@ def print_dataset_table():
         row = []
         row.append(dataset.name)
 
-        keywords = [k for k in dataset.keywords_allow_list] + [f"-{k}" for k in dataset.keywords_block_list]
-        row.append(', '.join(keywords))
+        keywords = [k for k in dataset.keywords_allow_list] + [
+            f"-{k}" for k in dataset.keywords_block_list
+        ]
+        row.append(", ".join(keywords))
 
         row.append(str(len(dataset.images)))
         rows.append("    " + " & ".join(row) + r" \\")
@@ -554,7 +584,7 @@ if __name__ == "__main__":
 
     print("Loading images...")
     load_all_images()
-    print_dataset_table()
+    # print_dataset_table()
     print("Done")
 
     app.run(debug=False, port=3000)
