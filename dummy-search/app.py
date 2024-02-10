@@ -625,6 +625,24 @@ def print_dataset_table():
     print(table)
 
 
+def calculate_performance_difference(score_a, score_b):
+     """
+     Calculate the performance difference between two scores as a percentage.
+
+     Parameters:
+     - score_a (float): The performance score of the first algorithm.
+     - score_b (float): The performance score of the second algorithm.
+
+     Returns:
+     - The performance difference between score_a and score_b as a formatted percentage.
+     """
+     # Calculate the difference as a percentage
+     difference_percentage = (score_a - score_b) / score_b * 100
+
+     # Format the result as a percentage with two decimal places
+     return "{:.2f}%".format(difference_percentage)
+
+
 if __name__ == "__main__":
     print("Loading CLIP...")
     clip = Clip()
