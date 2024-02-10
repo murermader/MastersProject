@@ -18,7 +18,7 @@ from classes import Image, Dataset
 from diskcache import Cache
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize, sent_tokenize
 
 load_dotenv(dotenv_path="../.env")
 dotenv_error_message = (
@@ -54,16 +54,53 @@ def load_all_images():
 
     lenghts = []
     wordcount_label = []
-    for label in labels_dict.values():
-        if label == "No information available.":
-            continue
+    sentencecount_label = []
 
-        label = label.replace("\n", "")
-        wordcount_label.append(len(word_tokenize(label)))
-        lenghts.append(len(label))
+    no_information_available = {
+        "No information available": 0,
+        "Due to circumstances beyond our control, no digitized copies of The Lethbridge Herald are available for the "
+        "period from March 31 through June 30, 1971 which prevents preparation of a description for this "
+        "photograph.": 0,
+        "No identification available.": 0,
+        "(Emtpy)": 0,
+    }
 
-    print(f"Average Label Length: {sum(lenghts) / len(lenghts)}")
-    print(f"Average Label Words : {sum(wordcount_label) / len(wordcount_label)}")
+    total_label_count = 0
+    filtered_label_count = 0
+    with open("labels.txt", mode="w", encoding="utf-8-sig") as f:
+        for label in labels_dict.values():
+            f.write(label + "\n")
+
+            if len(label.strip()) == 0:
+                filtered_label_count += 1
+                no_information_available["(Emtpy)"] += 1
+                continue
+
+            skip = False
+            for key in no_information_available.keys():
+                if key.lower() in label.lower():
+                    no_information_available[key] += 1
+                    skip = True
+                    break
+
+            if skip:
+                filtered_label_count += 1
+                continue
+
+            total_label_count += 1
+            label = label.replace("\n", "")
+            wordcount_label.append(len(word_tokenize(label)))
+            sentencecount_label.append(len(sent_tokenize(label)))
+            lenghts.append(len(label))
+
+    print(f"Total Labels: {total_label_count}")
+    print(f"Filtered Labels: {filtered_label_count}")
+    print(f"Total Labels after filtering: {total_label_count - filtered_label_count}")
+    print(no_information_available)
+    print(
+        f"Average Sentences per Label: {sum(sentencecount_label) / len(sentencecount_label)}"
+    )
+    print(f"Average Words per Label : {sum(wordcount_label) / len(wordcount_label)}")
 
     image_glob = os.path.join(os.environ["IMAGE_FOLDER"], "*.jpg")
     with Cache("diskcache") as cache:
@@ -126,6 +163,17 @@ def load_all_images():
             images.append(image)
 
     print(f"Loaded {len(images)} images")
+
+    # Uncomment to get random sample of dataset for paper
+    # random.seed(42)
+    # random.shuffle(images)
+    #
+    # for image in images[:15]:
+    #     row_template = r"\raisebox{-0.85\totalheight}{\includegraphics[width=30mm]{images/sample/P[[ID]].jpg}} & [[LABEL]] \\"
+    #     row_template = row_template.replace("[[ID]]", image.id)
+    #     row_template = row_template.replace("[[LABEL]]", image.label.replace("\n", " "))
+    #     print(row_template)
+
     return images
 
 
@@ -584,7 +632,7 @@ if __name__ == "__main__":
 
     print("Loading images...")
     load_all_images()
-    # print_dataset_table()
+    print_dataset_table()
     print("Done")
 
     app.run(debug=False, port=3000)
