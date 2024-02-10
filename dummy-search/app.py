@@ -597,7 +597,7 @@ def create_roc_curve(
 
 def print_dataset_table():
     rows = []
-    for dataset in [d for d in datasets if d.name.lower() not in ["men", "women"]]:
+    for dataset in [d for d in datasets]:
         row = []
         row.append(dataset.name)
 
