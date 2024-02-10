@@ -180,7 +180,7 @@ cars = Dataset(
     ]
 )
 indian = Dataset(
-    name="Indian",
+    name="First Nations",
     color="#fde725",
     keyword_allow_list=[
         "indian",
