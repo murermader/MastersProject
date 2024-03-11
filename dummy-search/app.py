@@ -536,15 +536,26 @@ def create_histogram(
 
     default_width, default_height = rcParams["figure.figsize"]
     plt.figure(figsize=(default_width * 2, default_height * 1.5))
-    plt.hist(
-        all_ranks,
-        bins=bins,
-        alpha=0.7,
-        histtype="bar",
-        edgecolor="black",
-        label=labels,
-        color=colors,
-    )
+
+    if colors:
+        plt.hist(
+            all_ranks,
+            bins=bins,
+            alpha=0.7,
+            histtype="bar",
+            edgecolor="black",
+            label=labels,
+            color=colors,
+        )
+    else:
+        plt.hist(
+            all_ranks,
+            bins=bins,
+            alpha=0.7,
+            histtype="bar",
+            edgecolor="black",
+            label=labels,
+        )
 
     plt.ylabel("Relevant Images Per Bin")
     plt.legend()  # Add a legend to show query names
@@ -584,7 +595,14 @@ def create_roc_curve(
             x.append(fpr)
 
         # Plot the ROC curve for the current query
-        plt.plot(x, y, lw=2, label=f"{query} (area = {auc(x, y):.2f})", color=colors[i])
+        if colors:
+            plt.plot(
+                x, y, lw=2, label=f"{query} (area = {auc(x, y):.2f})", color=colors[i]
+            )
+        else:
+            plt.plot(
+                x, y, lw=2, label=f"{query} (area = {auc(x, y):.2f})"
+            )
         i += 1
 
     plt.xlim([0.0, 1.0])
